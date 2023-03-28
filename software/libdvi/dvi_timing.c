@@ -282,9 +282,8 @@ void dvi_setup_scanline_for_vblank(const struct dvi_timing *t, const struct dvi_
 	_set_data_cb(&synclist[2], &dma_cfg[TMDS_SYNC_LANE], sym_hsync_off, t->h_back_porch    / DVI_SYMBOLS_PER_WORD, 2, true);
 	_set_data_cb(&synclist[3], &dma_cfg[TMDS_SYNC_LANE], sym_hsync_off, t->h_active_pixels / DVI_SYMBOLS_PER_WORD, 2, false);
 
-	for (int i = 0; i < N_TMDS_LANES; ++i) {
-		if (i == TMDS_SYNC_LANE)
-			continue;
+    //Removed starting from 0 since is TMDS_SYNC_LANE
+	for (int i = 1; i < N_TMDS_LANES; ++i) {
 		dma_cb_t *cblist = dvi_lane_from_list(l, i);
 		_set_data_cb(&cblist[0], &dma_cfg[i], sym_no_sync,(t->h_front_porch + t->h_sync_width + t->h_back_porch) / DVI_SYMBOLS_PER_WORD, 2, false);
 		_set_data_cb(&cblist[1], &dma_cfg[i], sym_no_sync, t->h_active_pixels / DVI_SYMBOLS_PER_WORD, 2, false);
@@ -301,21 +300,20 @@ void dvi_setup_scanline_for_vblank_with_audio(const struct dvi_timing *t, const 
 	const uint32_t *sym_preamble_to_data12 = &dvi_ctrl_syms[1];
 	const uint32_t *data_packet0 = getDefaultDataPacket0(vsync, t->h_sync_polarity);
 
-	for (int i = 0; i < N_TMDS_LANES; ++i) {
-		dma_cb_t *cblist = dvi_lane_from_list(l, i);
-		if (i == TMDS_SYNC_LANE) {
-			_set_data_cb(&cblist[0], &dma_cfg[i], sym_hsync_off, t->h_front_porch / DVI_SYMBOLS_PER_WORD, 2, false);
-			_set_data_cb(&cblist[1], &dma_cfg[i], data_packet0, N_DATA_ISLAND_WORDS, 0, false);
-			_set_data_cb(&cblist[2], &dma_cfg[i], sym_hsync_on, (t->h_sync_width - W_DATA_ISLAND) / DVI_SYMBOLS_PER_WORD, 2, false);
-			_set_data_cb(&cblist[3], &dma_cfg[i], sym_hsync_off, t->h_back_porch / DVI_SYMBOLS_PER_WORD, 2, true);
-			_set_data_cb(&cblist[4], &dma_cfg[i], sym_hsync_off, t->h_active_pixels / DVI_SYMBOLS_PER_WORD, 2, false);
-		} else {
-			_set_data_cb(&cblist[0], &dma_cfg[i], sym_no_sync, (t->h_front_porch - W_PREAMBLE) / DVI_SYMBOLS_PER_WORD, 2, false);
-			_set_data_cb(&cblist[1], &dma_cfg[i], sym_preamble_to_data12, W_PREAMBLE / DVI_SYMBOLS_PER_WORD, 2, false);
-			_set_data_cb(&cblist[2], &dma_cfg[i], getDefaultDataPacket12(), N_DATA_ISLAND_WORDS, 0, false);
-			_set_data_cb(&cblist[3], &dma_cfg[i], sym_no_sync, (t->h_sync_width + t->h_back_porch - W_DATA_ISLAND) / DVI_SYMBOLS_PER_WORD, 2, false);
-			_set_data_cb(&cblist[4], &dma_cfg[i], sym_no_sync, t->h_active_pixels / DVI_SYMBOLS_PER_WORD, 2, false);
-		}
+    dma_cb_t *cblist = dvi_lane_from_list(l, TMDS_SYNC_LANE);
+    _set_data_cb(&cblist[0], &dma_cfg[TMDS_SYNC_LANE], sym_hsync_off, t->h_front_porch / DVI_SYMBOLS_PER_WORD, 2, false);
+    _set_data_cb(&cblist[1], &dma_cfg[TMDS_SYNC_LANE], data_packet0, N_DATA_ISLAND_WORDS, 0, false);
+    _set_data_cb(&cblist[2], &dma_cfg[TMDS_SYNC_LANE], sym_hsync_on, (t->h_sync_width - W_DATA_ISLAND) / DVI_SYMBOLS_PER_WORD, 2, false);
+    _set_data_cb(&cblist[3], &dma_cfg[TMDS_SYNC_LANE], sym_hsync_off, t->h_back_porch / DVI_SYMBOLS_PER_WORD, 2, true);
+    _set_data_cb(&cblist[4], &dma_cfg[TMDS_SYNC_LANE], sym_hsync_off, t->h_active_pixels / DVI_SYMBOLS_PER_WORD, 2, false);
+
+	for (int i = 1; i < N_TMDS_LANES; ++i) {
+		cblist = dvi_lane_from_list(l, i);
+        _set_data_cb(&cblist[0], &dma_cfg[i], sym_no_sync, (t->h_front_porch - W_PREAMBLE) / DVI_SYMBOLS_PER_WORD, 2, false);
+        _set_data_cb(&cblist[1], &dma_cfg[i], sym_preamble_to_data12, W_PREAMBLE / DVI_SYMBOLS_PER_WORD, 2, false);
+        _set_data_cb(&cblist[2], &dma_cfg[i], getDefaultDataPacket12(), N_DATA_ISLAND_WORDS, 0, false);
+        _set_data_cb(&cblist[3], &dma_cfg[i], sym_no_sync, (t->h_sync_width + t->h_back_porch - W_DATA_ISLAND) / DVI_SYMBOLS_PER_WORD, 2, false);
+        _set_data_cb(&cblist[4], &dma_cfg[i], sym_no_sync, t->h_active_pixels / DVI_SYMBOLS_PER_WORD, 2, false);
 	}
 }
 
@@ -398,13 +396,17 @@ void dvi_setup_scanline_for_active_with_audio(const struct dvi_timing *t, const 
 const int dvi_lane_options[2][2] = {{1, 3}, {6, 5}};
 void __dvi_func(dvi_update_scanline_data_dma)(const struct dvi_timing *t, const uint32_t *tmdsbuf, struct dvi_scanline_dma_list *l, bool audio) {
 	const int *dvi_lane_option = dvi_lane_options[audio];
-    for (int i = 0; i < N_TMDS_LANES; ++i) {
 #if DVI_MONOCHROME_TMDS
 		const uint32_t *lane_tmdsbuf = tmdsbuf;
 #else
-		const uint32_t *lane_tmdsbuf = tmdsbuf + i * t->h_active_pixels / DVI_SYMBOLS_PER_WORD;
+		const uint32_t *lane_tmdsbuf = tmdsbuf + TMDS_SYNC_LANE * t->h_active_pixels / DVI_SYMBOLS_PER_WORD;
 #endif
-        dvi_lane_from_list(l, i)[dvi_lane_option[i == TMDS_SYNC_LANE]].read_addr = lane_tmdsbuf;
+    dvi_lane_from_list(l, TMDS_SYNC_LANE)[dvi_lane_option[1]].read_addr = lane_tmdsbuf;
+    for (int i = 1; i < N_TMDS_LANES; ++i) {
+#if !DVI_MONOCHROME_TMDS
+        lane_tmdsbuf = tmdsbuf + i * t->h_active_pixels / DVI_SYMBOLS_PER_WORD;
+#endif
+        dvi_lane_from_list(l, i)[dvi_lane_option[0]].read_addr = lane_tmdsbuf;
 	}
 }
 
