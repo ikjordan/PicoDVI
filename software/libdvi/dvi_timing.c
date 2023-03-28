@@ -395,18 +395,16 @@ void dvi_setup_scanline_for_active_with_audio(const struct dvi_timing *t, const 
 	}
 }
 
+const int dvi_lane_options[2][2] = {{1, 3}, {6, 5}};
 void __dvi_func(dvi_update_scanline_data_dma)(const struct dvi_timing *t, const uint32_t *tmdsbuf, struct dvi_scanline_dma_list *l, bool audio) {
-	for (int i = 0; i < N_TMDS_LANES; ++i) {
+	const int *dvi_lane_option = dvi_lane_options[audio];
+    for (int i = 0; i < N_TMDS_LANES; ++i) {
 #if DVI_MONOCHROME_TMDS
 		const uint32_t *lane_tmdsbuf = tmdsbuf;
 #else
 		const uint32_t *lane_tmdsbuf = tmdsbuf + i * t->h_active_pixels / DVI_SYMBOLS_PER_WORD;
 #endif
-		if (i == TMDS_SYNC_LANE) {
-            dvi_lane_from_list(l, i)[audio ? 5 : 3].read_addr = lane_tmdsbuf;
-        } else {
-            dvi_lane_from_list(l, i)[audio ? 6 : 1].read_addr = lane_tmdsbuf;
-        }
+        dvi_lane_from_list(l, i)[dvi_lane_option[i == TMDS_SYNC_LANE]].read_addr = lane_tmdsbuf;
 	}
 }
 
