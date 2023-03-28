@@ -380,7 +380,7 @@ void dvi_wait_for_valid_line(struct dvi_inst *inst) {
     queue_peek_blocking_u32(&inst->q_colour_valid, &tmdsbuf);
 }
 
-bool dvi_update_data_packet_(struct dvi_inst *inst, data_packet_t *packet) {
+bool __dvi_func(dvi_update_data_packet_)(struct dvi_inst *inst, data_packet_t *packet) {
     if (inst->samples_per_frame == 0) {
         return false;
     }
@@ -415,13 +415,4 @@ bool dvi_update_data_packet_(struct dvi_inst *inst, data_packet_t *packet) {
     }
 
     return false;
-}
-
-void dvi_update_data_packet(struct dvi_inst *inst) {
-    data_packet_t packet;
-    if (!dvi_update_data_packet_(inst, &packet)) {
-        set_null(&packet);
-    }
-    bool vsync = inst->timing_state.v_state == DVI_STATE_SYNC;
-    encode(&inst->next_data_stream, &packet, inst->timing->v_sync_polarity == vsync, inst->timing->h_sync_polarity);
 }

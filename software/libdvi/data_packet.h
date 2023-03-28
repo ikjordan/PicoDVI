@@ -83,7 +83,7 @@ void compute_parity(data_packet_t *data_packet);
 void compute_info_frame_checkSum(data_packet_t *data_packet);
 void encode_header(const data_packet_t *data_packet, uint32_t *dst, int hv, bool firstPacket);
 void encode_subpacket(const data_packet_t *data_packet, uint32_t *dst1, uint32_t *dst2);
-void set_null(data_packet_t *data_packet);
+void set_null(void *data, int size);
 int  set_audio_sample(data_packet_t *data_packet, const audio_sample_t *p, int n, int frameCt);
 void set_audio_clock_regeneration(data_packet_t *data_packet, int CTS, int N);
 void set_audio_info_frame(data_packet_t *data_packet, int freq);

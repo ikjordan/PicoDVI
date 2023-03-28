@@ -111,7 +111,16 @@ void dvi_enable_data_island(struct dvi_inst *inst);
 void dvi_update_data_island_ptr(struct dvi_scanline_dma_list *dma_list, data_island_stream_t *stream);
 void dvi_audio_sample_buffer_set(struct dvi_inst *inst, audio_sample_t *buffer, int size);
 void dvi_set_audio_freq(struct dvi_inst *inst, int audio_freq, int cts, int n);
-void dvi_update_data_packet(struct dvi_inst *inst);
+bool dvi_update_data_packet_(struct dvi_inst *inst, data_packet_t *packet);
+void inline dvi_update_data_packet(struct dvi_inst *inst) {
+    data_packet_t packet;
+    if (!dvi_update_data_packet_(inst, &packet)) {
+        set_null(&packet, sizeof(data_packet_t));
+    }
+    bool vsync = inst->timing_state.v_state == DVI_STATE_SYNC;
+    encode(&inst->next_data_stream, &packet, inst->timing->v_sync_polarity == vsync, inst->timing->h_sync_polarity);
+}
+
 inline void dvi_set_scanline(struct dvi_inst *inst, bool value) {
     inst->scanline_is_enabled = value;
 }

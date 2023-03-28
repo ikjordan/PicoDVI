@@ -91,8 +91,8 @@ uint16_t __not_in_flash_func(TERC4Syms_)[16] = {
     0b1011000011,
 };
 
-uint32_t __not_in_flash_func(makeTERC4x2Char)(int i) { return TERC4Syms_[i] | (TERC4Syms_[i] << 10); }
-uint32_t __not_in_flash_func(makeTERC4x2Char_2)(int i0, int i1) { return TERC4Syms_[i0] | (TERC4Syms_[i1] << 10); }
+uint32_t inline makeTERC4x2Char(int i) { return TERC4Syms_[i] | (TERC4Syms_[i] << 10); }
+uint32_t inline makeTERC4x2Char_2(int i0, int i1) { return TERC4Syms_[i0] | (TERC4Syms_[i1] << 10); }
 #define TERC4_0x2CharSym_ 0x000A729C // Build time generated -> makeTERC4x2Char(0);
 #define dataGaurdbandSym_ 0x0004CD33 // Build time generated -> 0b0100110011'0100110011;
 uint32_t __not_in_flash_func(defaultDataPacket12_)[N_DATA_ISLAND_WORDS] = {
@@ -198,8 +198,11 @@ void __not_in_flash_func(encode_subpacket)(const data_packet_t *data_packet, uin
     }
 }
 
-void __not_in_flash_func(set_null)(data_packet_t *data_packet) {
-    memset(data_packet, 0, sizeof(data_packet_t));
+void __not_in_flash_func(set_null)(void *data, int size) {
+    register unsigned char *ptr = (unsigned char *) data;
+    for (int i=0; i< size; i++) {
+        ptr[i] = 0;
+    }
 }
 
 int  __not_in_flash_func(set_audio_sample)(data_packet_t *data_packet, const audio_sample_t *p, int n, int frameCt) {
@@ -231,7 +234,7 @@ int  __not_in_flash_func(set_audio_sample)(data_packet_t *data_packet, const aud
         ++p;
         // channel status (is it relevant?)
     }
-    memset(data_packet->subpacket[n], 0, sizeof(data_packet->subpacket[0]) * (4 - n));
+    set_null(data_packet->subpacket[n], sizeof(data_packet->subpacket[0]) * (4 - n));
     // dump();
 
     frameCt -= n;
@@ -262,7 +265,7 @@ void set_audio_clock_regeneration(data_packet_t *data_packet, int cts, int n) {
 }
 
 void set_audio_info_frame(data_packet_t *data_packet, int freq) {
-    set_null(data_packet);
+    set_null(data_packet, sizeof(data_packet_t));
     data_packet->header[0] = 0x84;
     data_packet->header[1] = 1;  // version
     data_packet->header[2] = 10; // len
@@ -285,7 +288,7 @@ void set_audio_info_frame(data_packet_t *data_packet, int freq) {
 
 void set_AVI_info_frame(data_packet_t *data_packet, scan_info s, pixel_format y, colorimetry c, picture_aspect_ratio m,
     active_format_aspect_ratio r, RGB_quantization_range q, video_code vic) {
-    set_null(data_packet);
+    set_null(data_packet, sizeof(data_packet_t));
     data_packet->header[0] = 0x82;
     data_packet->header[1] = 2;  // version
     data_packet->header[2] = 13; // len
@@ -302,7 +305,7 @@ void set_AVI_info_frame(data_packet_t *data_packet, scan_info s, pixel_format y,
     compute_parity(data_packet);
 }
 
-void encode(data_island_stream_t *dst, const data_packet_t *packet, bool vsync, bool hsync) {
+void __not_in_flash_func(encode)(data_island_stream_t *dst, const data_packet_t *packet, bool vsync, bool hsync) {
     int hv = (vsync ? 2 : 0) | (hsync ? 1 : 0);
     dst->data[0][0] = makeTERC4x2Char(0b1100 | hv);
     dst->data[1][0] = dataGaurdbandSym_;
