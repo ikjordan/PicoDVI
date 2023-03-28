@@ -1,5 +1,6 @@
 add_subdirectory(bad_apple)
 add_subdirectory(colour_terminal)
+add_subdirectory(colour_terminal_audio)
 add_subdirectory(christmas_snowflakes)
 add_subdirectory(dht_logging)
 add_subdirectory(dual_display)
