@@ -239,7 +239,6 @@ void __dvi_func(dvi_timing_state_advance)(const struct dvi_timing *t, struct dvi
 		    (s->v_state == DVI_STATE_SYNC && s->v_ctr == t->v_sync_width) ||
 		    (s->v_state == DVI_STATE_BACK_PORCH && s->v_ctr == t->v_back_porch) ||
 		    (s->v_state == DVI_STATE_ACTIVE && s->v_ctr == t->v_active_lines)) {
-
 			s->v_state = (s->v_state + 1) % DVI_STATE_COUNT;
 			s->v_ctr = 0;
 		}
@@ -302,19 +301,15 @@ void dvi_setup_scanline_for_vblank_with_audio(const struct dvi_timing *t, const 
 	const uint32_t *sym_preamble_to_data12 = &dvi_ctrl_syms[1];
 	const uint32_t *data_packet0 = getDefaultDataPacket0(vsync, t->h_sync_polarity);
 
-	for (int i = 0; i < N_TMDS_LANES; ++i)
-	{
+	for (int i = 0; i < N_TMDS_LANES; ++i) {
 		dma_cb_t *cblist = dvi_lane_from_list(l, i);
-		if (i == TMDS_SYNC_LANE)
-		{
+		if (i == TMDS_SYNC_LANE) {
 			_set_data_cb(&cblist[0], &dma_cfg[i], sym_hsync_off, t->h_front_porch / DVI_SYMBOLS_PER_WORD, 2, false);
 			_set_data_cb(&cblist[1], &dma_cfg[i], data_packet0, N_DATA_ISLAND_WORDS, 0, false);
 			_set_data_cb(&cblist[2], &dma_cfg[i], sym_hsync_on, (t->h_sync_width - W_DATA_ISLAND) / DVI_SYMBOLS_PER_WORD, 2, false);
 			_set_data_cb(&cblist[3], &dma_cfg[i], sym_hsync_off, t->h_back_porch / DVI_SYMBOLS_PER_WORD, 2, true);
 			_set_data_cb(&cblist[4], &dma_cfg[i], sym_hsync_off, t->h_active_pixels / DVI_SYMBOLS_PER_WORD, 2, false);
-		}
-		else
-		{
+		} else {
 			_set_data_cb(&cblist[0], &dma_cfg[i], sym_no_sync, (t->h_front_porch - W_PREAMBLE) / DVI_SYMBOLS_PER_WORD, 2, false);
 			_set_data_cb(&cblist[1], &dma_cfg[i], sym_preamble_to_data12, W_PREAMBLE / DVI_SYMBOLS_PER_WORD, 2, false);
 			_set_data_cb(&cblist[2], &dma_cfg[i], getDefaultDataPacket12(), N_DATA_ISLAND_WORDS, 0, false);
@@ -367,22 +362,18 @@ void dvi_setup_scanline_for_active_with_audio(const struct dvi_timing *t, const 
 	const uint32_t *sym_preamble_to_video2 = &dvi_ctrl_syms[0];
 	const uint32_t *data_packet0 = getDefaultDataPacket0(!t->v_sync_polarity, t->h_sync_polarity);
 
-	for (int i = 0; i < N_TMDS_LANES; ++i)
-	{
+	for (int i = 0; i < N_TMDS_LANES; ++i) {
 		dma_cb_t *cblist = dvi_lane_from_list(l, i);
 
 		int active_block;
-		if (i == TMDS_SYNC_LANE)
-		{
+		if (i == TMDS_SYNC_LANE) {
 			_set_data_cb(&cblist[0], &dma_cfg[i], sym_hsync_off, t->h_front_porch / DVI_SYMBOLS_PER_WORD, 2, false);
 			_set_data_cb(&cblist[1], &dma_cfg[i], data_packet0, N_DATA_ISLAND_WORDS, 0, false);
 			_set_data_cb(&cblist[2], &dma_cfg[i], sym_hsync_on, (t->h_sync_width - W_DATA_ISLAND) / DVI_SYMBOLS_PER_WORD, 2, false);
 			_set_data_cb(&cblist[3], &dma_cfg[i], sym_hsync_off, (t->h_back_porch - W_GUARDBAND) / DVI_SYMBOLS_PER_WORD, 2, false);
 			_set_data_cb(&cblist[4], &dma_cfg[i], &video_gaurdband_syms[0], W_GUARDBAND / DVI_SYMBOLS_PER_WORD, 2, true);
 			active_block = 5;
-		}
-		else
-		{
+		} else {
 			_set_data_cb(&cblist[0], &dma_cfg[i], sym_no_sync, (t->h_front_porch - W_PREAMBLE) / DVI_SYMBOLS_PER_WORD, 2, false);
 			_set_data_cb(&cblist[1], &dma_cfg[i], sym_preamble_to_data12, W_PREAMBLE / DVI_SYMBOLS_PER_WORD, 2, false);
 			_set_data_cb(&cblist[2], &dma_cfg[i], getDefaultDataPacket12(), N_DATA_ISLAND_WORDS, 0, false);
@@ -392,14 +383,11 @@ void dvi_setup_scanline_for_active_with_audio(const struct dvi_timing *t, const 
 			active_block = 6;
 		}
 
-		if (tmdsbuf)
-		{
+		if (tmdsbuf) {
 			// Non-repeating DMA for the freshly-encoded TMDS buffer
 			_set_data_cb(&cblist[active_block], &dma_cfg[i], tmdsbuf + i * (t->h_active_pixels / DVI_SYMBOLS_PER_WORD),
 						 t->h_active_pixels / DVI_SYMBOLS_PER_WORD, 0, false);
-		}
-		else
-		{
+		} else {
 			// Use read ring to repeat the correct DC-balanced symbol pair on blank scanlines (4 or 8 byte period)
 			_set_data_cb(&cblist[active_block], &dma_cfg[i], &(black ? black_scanline_tmds : empty_scanline_tmds)[2 * i / DVI_SYMBOLS_PER_WORD],
 						 t->h_active_pixels / DVI_SYMBOLS_PER_WORD, DVI_SYMBOLS_PER_WORD == 2 ? 2 : 3, false);
@@ -414,10 +402,11 @@ void __dvi_func(dvi_update_scanline_data_dma)(const struct dvi_timing *t, const 
 #else
 		const uint32_t *lane_tmdsbuf = tmdsbuf + i * t->h_active_pixels / DVI_SYMBOLS_PER_WORD;
 #endif
-		if (i == TMDS_SYNC_LANE)
-			dvi_lane_from_list(l, i)[audio ? 5 : 3].read_addr = lane_tmdsbuf;
-		else
-			dvi_lane_from_list(l, i)[audio ? 6 : 1].read_addr = lane_tmdsbuf;
+		if (i == TMDS_SYNC_LANE) {
+            dvi_lane_from_list(l, i)[audio ? 5 : 3].read_addr = lane_tmdsbuf;
+        } else {
+            dvi_lane_from_list(l, i)[audio ? 6 : 1].read_addr = lane_tmdsbuf;
+        }
 	}
 }
 
