@@ -31,3 +31,4 @@ target_link_libraries(libdvi INTERFACE
 
 pico_generate_pio_header(libdvi ${CMAKE_CURRENT_LIST_DIR}/dvi_serialiser.pio)
 pico_generate_pio_header(libdvi ${CMAKE_CURRENT_LIST_DIR}/tmds_encode_1bpp.pio)
+pico_generate_pio_header(libdvi ${CMAKE_CURRENT_LIST_DIR}/dvi_clock.pio)

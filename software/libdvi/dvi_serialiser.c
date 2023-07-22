@@ -7,6 +7,15 @@
 #include "dvi.h"
 #include "dvi_serialiser.h"
 #include "dvi_serialiser.pio.h"
+#include "dvi_clock.pio.h"
+
+#if defined(USE_PIO_TMDS_ENCODE) || !defined (DVI_USE_PIO_CLOCK)
+#define USE_PWM_CLOCK
+#endif
+
+#ifndef USE_PWM_CLOCK
+static int clk_sm = 0;
+#endif
 
 static void dvi_configure_pad(uint gpio, bool invert) {
 	// 2 mA drive, enable slew rate limiting (this seems fine even at 720p30, and
@@ -41,6 +50,7 @@ void dvi_serialiser_init(struct dvi_serialiser_cfg *cfg) {
 		dvi_configure_pad(cfg->pins_tmds[i] + 1, cfg->invert_diffpairs);
 	}
 
+#ifdef USE_PWM_CLOCK
 	// Use a PWM slice to drive the pixel clock. Both GPIOs must be on the same
 	// slice (lower-numbered GPIO must be even).
 	assert(cfg->pins_clk % 2 == 0);
@@ -51,9 +61,17 @@ void dvi_serialiser_init(struct dvi_serialiser_cfg *cfg) {
 	pwm_config_set_wrap(&pwm_cfg, 9);
 	pwm_init(slice, &pwm_cfg, false);
 	pwm_set_both_levels(slice, 5, 5);
+#else
+	// Use a state machine to generate the clock
+	clk_sm = pio_claim_unused_sm(cfg->pio, true);
+    offset = pio_add_program(cfg->pio, &dvi_clock_program);
+	dvi_clock_program_init(cfg->pio, clk_sm, offset, cfg->pins_clk);
+#endif
 
 	for (uint i = cfg->pins_clk; i <= cfg->pins_clk + 1; ++i) {
+#ifdef USE_PWM_CLOCK
 		gpio_set_function(i, GPIO_FUNC_PWM);
+#endif
 		dvi_configure_pad(i, cfg->invert_diffpairs);
 	}
 }
@@ -66,10 +84,18 @@ void dvi_serialiser_enable(struct dvi_serialiser_cfg *cfg, bool enable) {
 		// The DVI spec allows for phase offset between clock and data links.
 		// So PWM and PIO do not need to be synchronised perfectly.
 		hw_set_bits(&cfg->pio->ctrl, mask);
+#ifdef USE_PWM_CLOCK
 		pwm_set_enabled(pwm_gpio_to_slice_num(cfg->pins_clk), true);
+#else
+    	pio_sm_set_enabled(cfg->pio, clk_sm, true);
+#endif
 	}
 	else {
 		hw_clear_bits(&cfg->pio->ctrl, mask);
+#ifdef USE_PWM_CLOCK
 		pwm_set_enabled(pwm_gpio_to_slice_num(cfg->pins_clk), false);
+#else
+    	pio_sm_set_enabled(cfg->pio, clk_sm, false);
+#endif
 	}
 }
