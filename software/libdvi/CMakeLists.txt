@@ -18,6 +18,10 @@ target_sources(libdvi INTERFACE
 	${CMAKE_CURRENT_LIST_DIR}/tmds_table_fullres.h
 	${CMAKE_CURRENT_LIST_DIR}/util_queue_u32_inline.h
 	)
+# Enable for Olimex board with stereo sound
+#    target_compile_definitions(libdvi INTERFACE
+#                               -DDVI_DEFAULT_SERIAL_CONFIG=Olimex_RP2040_PICO_PC_cfg
+#                               -DDVI_USE_PIO_CLOCK)
 
 target_include_directories(libdvi INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(libdvi INTERFACE

@@ -15,18 +15,36 @@
 // offloaded to a slower encode loop on a spare state machine.
 
 // Pick one:
-#define MODE_640x480_60Hz
+//#define MODE_640x480_60Hz
+//#define MODE_720x540_50Hz
+#define MODE_720x576_50Hz
 // #define MODE_1280x720_30Hz
 
 #if defined(MODE_640x480_60Hz)
 // DVDD 1.2V (1.1V seems ok too)
 #define FRAME_WIDTH 640
 #define FRAME_HEIGHT 480
+#define IMAGE_WIDTH 640
 #define VREG_VSEL VREG_VOLTAGE_1_20
 #define DVI_TIMING dvi_timing_640x480p_60hz
 #include "moon_1bpp_640x480.h"
 #define moon_img moon_1bpp_640x480
-
+#elif defined(MODE_720x540_50Hz)
+#define FRAME_WIDTH 720
+#define FRAME_HEIGHT 540
+#define IMAGE_WIDTH 1280
+#define VREG_VSEL VREG_VOLTAGE_1_20
+#define DVI_TIMING dvi_timing_720x540p_50hz
+#include "moon_1bpp_1280x720.h"
+#define moon_img moon_1bpp_1280x720
+#elif defined(MODE_720x576_50Hz)
+#define FRAME_WIDTH 720
+#define FRAME_HEIGHT 576
+#define IMAGE_WIDTH 1280
+#define VREG_VSEL VREG_VOLTAGE_1_20
+#define DVI_TIMING dvi_timing_720x576p_50hz
+#include "moon_1bpp_1280x720.h"
+#define moon_img moon_1bpp_1280x720
 #elif defined(MODE_1280x720_30Hz)
 #define FRAME_WIDTH 1280
 #define FRAME_HEIGHT 720
@@ -86,7 +104,7 @@ int main() {
 	dvi_start(&dvi0);
 	while (true) {
 		for (uint y = 0; y < FRAME_HEIGHT; ++y) {
-			const uint32_t *colourbuf = &((const uint32_t*)moon_img)[y * FRAME_WIDTH / 32];
+			const uint32_t *colourbuf = &((const uint32_t*)moon_img)[y * IMAGE_WIDTH / 32];
 			uint32_t *tmdsbuf;
 			queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmdsbuf);
 #ifndef USE_PIO_TMDS_ENCODE
