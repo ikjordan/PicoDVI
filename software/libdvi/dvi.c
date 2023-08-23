@@ -46,11 +46,13 @@ void dvi_init(struct dvi_inst *inst, uint spinlock_tmds_queue, uint spinlock_col
     dvi_setup_scanline_for_active(inst->timing, inst->dma_cfg, NULL, &inst->dma_list_error, false);
     dvi_setup_scanline_for_active(inst->timing, inst->dma_cfg, NULL, &inst->dma_list_active_blank, true);
 
+    uint16_t mask = 0x3f;  // To account for worst case of monochrome horizontal pixel doubling
+
     for (int i = 0; i < DVI_N_TMDS_BUFFERS; ++i) {
 #if DVI_MONOCHROME_TMDS
-        void *tmdsbuf = malloc(inst->timing->h_active_pixels / DVI_SYMBOLS_PER_WORD * sizeof(uint32_t));
+        void *tmdsbuf = malloc(((inst->timing->h_active_pixels + mask) & (~mask)) / DVI_SYMBOLS_PER_WORD * sizeof(uint32_t));
 #else
-        void *tmdsbuf = malloc(TMDS_CHANNELS * inst->timing->h_active_pixels / DVI_SYMBOLS_PER_WORD * sizeof(uint32_t));
+        void *tmdsbuf = malloc(TMDS_CHANNELS * ((inst->timing->h_active_pixels + mask) & (~mask)) / DVI_SYMBOLS_PER_WORD * sizeof(uint32_t));
 #endif
         if (!tmdsbuf) {
             panic("TMDS buffer allocation failed");

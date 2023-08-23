@@ -53,9 +53,7 @@ void dvi_serialiser_init(struct dvi_serialiser_cfg *cfg) {
 #ifdef USE_PWM_CLOCK
 	// Use a PWM slice to drive the pixel clock. Both GPIOs must be on the same
 	// slice (lower-numbered GPIO must be even).
-	//@TODO: Commented to allow debuguing
-	//assert(cfg->pins_clk % 2 == 0); //Avoid failing if on debug mode
-
+	assert(cfg->pins_clk % 2 == 0);
 	uint slice = pwm_gpio_to_slice_num(cfg->pins_clk);
 	// 5 cycles high, 5 low. Invert one channel so that we get complementary outputs.
 	pwm_config pwm_cfg = pwm_get_default_config();
