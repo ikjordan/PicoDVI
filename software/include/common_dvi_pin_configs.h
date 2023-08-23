@@ -61,22 +61,13 @@ static const struct dvi_serialiser_cfg micromod_cfg = {
 };
 
 // Pico DVI Sock (small hat on the bottom) which solders to the end of a Pico
-// static const struct dvi_serialiser_cfg pico_sock_cfg = {
-// 	.pio = DVI_DEFAULT_PIO_INST,
-// 	.sm_tmds = {0, 1, 2},
-// 	.pins_tmds = {12, 18, 16},
-// 	.pins_clk = 14,
-// 	.invert_diffpairs = false
-// };
-
-// pico-RGB2HDMI
 static const struct dvi_serialiser_cfg pico_sock_cfg = {
-        .pio = pio0,
-        .sm_tmds = {0, 1, 2},
-        .pins_tmds = {5, 7, 9},
-        .pins_clk = 3,
-        .invert_diffpairs = true
-    };
+	.pio = DVI_DEFAULT_PIO_INST,
+	.sm_tmds = {0, 1, 2},
+	.pins_tmds = {12, 18, 16},
+	.pins_clk = 14,
+	.invert_diffpairs = false
+};
 
 // The HDMI socket on Pimoroni Pico Demo HDMI
 // (we would talk about rev B if we had a rev B...)
