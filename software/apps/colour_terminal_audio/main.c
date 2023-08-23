@@ -164,7 +164,7 @@ int __not_in_flash("main") main() {
     dvi_get_blank_settings(&dvi0)->bottom = 4 * 0;
     dvi_audio_sample_buffer_set(&dvi0, audio_buffer, AUDIO_BUFFER_SIZE);
     dvi_set_audio_freq(&dvi0, 44100, 28000, 6272);
-    add_repeating_timer_ms(2, audio_timer_callback, NULL, &audio_timer);
+    add_repeating_timer_ms(-2, audio_timer_callback, NULL, &audio_timer);
 
 	multicore_launch_core1(core1_main);
 
