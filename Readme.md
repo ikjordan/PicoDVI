@@ -6,6 +6,10 @@ Using https://github.com/shuichitakano/pico_lib C++ implementation of the HDMI w
 For picoDVI from https://github.com/Wren6991/PicoDVI
 DVI start/stop works, audio works with some limitations of cpu usage, if line or pixel doubling is enabled works
 
+[*IJ*]
++ PicoDVI with audio and OlimexPC board support
++ Extra 50Hz modes added
+
 ![](img/mountains.jpg)
 
 *640x480 RGB565 image, 640x480p 60 Hz DVI mode. 264 kB SRAM, 2x Cortex-M0+, system clock 252 MHz*
