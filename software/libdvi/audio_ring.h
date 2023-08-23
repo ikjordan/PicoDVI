@@ -2,6 +2,10 @@
 #define AUDIO_RING_H
 #include "pico.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct audio_sample {
     int16_t channels[2];
 } audio_sample_t;
@@ -26,4 +30,8 @@ uint32_t get_write_size(audio_ring_t *audio_ring, bool full);
 uint32_t get_read_size(audio_ring_t *audio_ring, bool full);
 void set_write_offset(audio_ring_t *audio_ring, uint32_t v);
 void set_read_offset(audio_ring_t *audio_ring, uint32_t v);
+
+#ifdef __cplusplus
+}
+#endif
 #endif

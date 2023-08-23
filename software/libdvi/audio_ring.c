@@ -9,7 +9,7 @@ void audio_ring_set(audio_ring_t *audio_ring, audio_sample_t *buffer, uint32_t s
     audio_ring->write  = 0;
 }
 
-uint32_t get_write_size(audio_ring_t *audio_ring, bool full) {
+uint32_t __not_in_flash_func(get_write_size)(audio_ring_t *audio_ring, bool full) {
     __mem_fence_acquire();
     uint32_t rp = audio_ring->read;
     uint32_t wp = audio_ring->write;
@@ -32,7 +32,7 @@ uint32_t __not_in_flash_func(get_read_size)(audio_ring_t *audio_ring, bool full)
     }    
 }
 
-void increase_write_pointer(audio_ring_t *audio_ring, uint32_t size) {
+void __not_in_flash_func(increase_write_pointer)(audio_ring_t *audio_ring, uint32_t size) {
     audio_ring->write = (audio_ring->write + size) & (audio_ring->size - 1);
     __mem_fence_release();
 }

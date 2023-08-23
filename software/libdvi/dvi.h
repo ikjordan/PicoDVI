@@ -1,6 +1,10 @@
 #ifndef _DVI_H
 #define _DVI_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "pico/util/queue.h"
 #include "dvi_config_defs.h"
 #include "dvi_timing.h"
@@ -127,4 +131,9 @@ inline void dvi_set_scanline(struct dvi_inst *inst, bool value) {
 inline dvi_blank_t *dvi_get_blank_settings(struct dvi_inst *inst) {
     return &inst->blank_settings;
 }
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
