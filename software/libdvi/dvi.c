@@ -319,8 +319,7 @@ void dvi_audio_init(struct dvi_inst *inst) {
     inst->scanline_is_enabled = false;
     inst->audio_freq = 0;
     inst->samples_per_frame = 0;
-    inst->samples_per_line16 = 0;
-    inst->left_audio_sample_count = 0;
+    inst->samples_per_line24 = 0;
     inst->audio_sample_pos = 0;
     inst->audio_frame_count = 0;
 }
@@ -370,10 +369,11 @@ void dvi_set_audio_freq(struct dvi_inst *inst, int audio_freq, int cts, int n) {
     set_audio_clock_regeneration(&inst->audio_clock_regeneration, cts, n);
     set_audio_info_frame(&inst->audio_info_frame, audio_freq);
     uint pixelClock =   dvi_timing_get_pixel_clock(inst->timing);
-    uint nPixPerFrame = dvi_timing_get_pixels_per_frame(inst->timing);
-    uint nPixPerLine =  dvi_timing_get_pixels_per_line(inst->timing);
+    uint64_t nPixPerFrame = dvi_timing_get_pixels_per_frame(inst->timing);
+    uint64_t nPixPerLine =  dvi_timing_get_pixels_per_line(inst->timing);
     inst->samples_per_frame  = (uint64_t)(audio_freq) * nPixPerFrame / pixelClock;
-    inst->samples_per_line16 = (uint64_t)(audio_freq) * nPixPerLine * 65536 / pixelClock;
+    uint64_t t = audio_freq * nPixPerLine * (uint64_t)0x1000000;
+    inst->samples_per_line24 = t / pixelClock;
     dvi_enable_data_island(inst);
 }
 
@@ -387,7 +387,7 @@ bool __dvi_func(dvi_update_data_packet_)(struct dvi_inst *inst, data_packet_t *p
         return false;
     }
 
-    inst->audio_sample_pos += inst->samples_per_line16;
+    inst->audio_sample_pos += inst->samples_per_line24;
     if (inst->timing_state.v_state == DVI_STATE_FRONT_PORCH) {
         if (inst->timing_state.v_ctr == 0) {
             if (inst->dvi_frame_count & 1) {
@@ -395,8 +395,6 @@ bool __dvi_func(dvi_update_data_packet_)(struct dvi_inst *inst, data_packet_t *p
             } else {
                 *packet = inst->audio_info_frame;
             }
-            inst->left_audio_sample_count = inst->samples_per_frame;
-
             return true;
         } else if (inst->timing_state.v_ctr == 1) {
             *packet = inst->audio_clock_regeneration;
@@ -404,15 +402,16 @@ bool __dvi_func(dvi_update_data_packet_)(struct dvi_inst *inst, data_packet_t *p
             return true;
         }
     }
-    int sample_pos_16 = inst->audio_sample_pos >> 16;
+    int sample_pos_24 = inst->audio_sample_pos >> 24;
     int read_size = get_read_size(&inst->audio_ring, false);
-    int n = MAX(0, MIN(4, MIN(sample_pos_16, read_size)));
-    inst->audio_sample_pos -= n << 16;
-    if (n) {
+    int n = MIN(4, MIN(sample_pos_24, read_size));
+    inst->audio_sample_pos -= n << 24;
+    if (n)
+    {
         audio_sample_t *audio_sample_ptr = get_read_pointer(&inst->audio_ring);
         inst->audio_frame_count = set_audio_sample(packet, audio_sample_ptr, n, inst->audio_frame_count);
         increase_read_pointer(&inst->audio_ring, n);
-        
+
         return true;
     }
 

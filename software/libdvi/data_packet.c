@@ -273,7 +273,7 @@ void set_audio_info_frame(data_packet_t *data_packet, int freq) {
     const int cc = 1; // 2ch
     const int ct = 1; // IEC 60958 PCM
     const int ss = 1; // 16bit
-    const int sf = freq == 48000 ? 3 : (freq == 44100 ? 2 : 0);
+    const int sf = freq == 48000 ? 3 : (freq == 44100 ? 2 : (freq == 32000) ? 1 : 0);
     const int ca = 0;  // FR, FL
     const int lsv = 0; // 0db
     const int dm_inh = 0;

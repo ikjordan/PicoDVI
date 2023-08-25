@@ -62,14 +62,13 @@ struct dvi_inst {
     data_packet_t audio_info_frame;
     int audio_freq;
     int samples_per_frame;
-    int samples_per_line16;
+    int samples_per_line24;
     
     bool data_island_is_enabled;
     bool scanline_is_enabled;
     data_island_stream_t next_data_stream;
     audio_ring_t  audio_ring;
 
-    int left_audio_sample_count;
     int audio_sample_pos;
     int audio_frame_count;
 };

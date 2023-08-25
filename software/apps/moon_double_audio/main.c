@@ -15,8 +15,13 @@
 #define moon_img moon_1bpp_640x480
 #define IMAGE_WIDTH 640
   
+#if 1
 #define AUDIO_RATE 32000    // Audio Sample rate
 #define HDMI_N     4096     // From HDMI standard for 32kHz
+#else
+#define AUDIO_RATE 48000    // Audio Sample rate
+#define HDMI_N     6144     // From HDMI standard for 48kHz
+#endif
 
 #define FIFTYHZMS   20      // ms between frames at 50Hz
 #define TICKMS      2       // Time between audio callbacks
@@ -24,6 +29,7 @@
 #define MAX_SIZE    (TICKMS * AUDIO_RATE / 1000)
 
 static semaphore_t fifty_hz;
+static semaphore_t init;
 static void core1_main();
 
 // Display 2x2 pixels for each pixel in B&W image
@@ -54,63 +60,40 @@ static void core1_main();
 #endif
 
 struct dvi_inst dvi0;
+audio_ring_t* ring;
+static uint32_t call_count = 0;
+static uint32_t last_fault = 0;
+static int d=0;
 
 //Audio Related
-#define AUDIO_BUFFER_SIZE   512
+#define AUDIO_BUFFER_SIZE   (0x1 << 9)  // Must be power of two
 audio_sample_t      audio_buffer[AUDIO_BUFFER_SIZE];
 struct repeating_timer audio_timer;
 
 static bool __not_in_flash_func(audio_timer_callback)(struct repeating_timer *t) 
 {
-    static uint call_count = 0;
     static uint sample_count = 0;
-
     ++call_count;
 
     // write in chunks
-    int size = get_write_size(&dvi0.audio_ring, true);
-    __mem_fence_release();
+    int size = get_write_size(&dvi0.audio_ring);
     if (size >= MAX_SIZE)
     {   
-        size = get_write_size(&dvi0.audio_ring, false);
-        audio_sample_t *audio_ptr = get_write_pointer(&dvi0.audio_ring);
-        if (size > ((3*AUDIO_BUFFER_SIZE)>>2))
-        {
-            // Allow to refill buffer
-            size = (MAX_SIZE<<1);
-        }
-        else
-        {
-            size = (size>MAX_SIZE) ? MAX_SIZE : size;
-        }
+        size = (size > ((3*AUDIO_BUFFER_SIZE)>>2)) ? (MAX_SIZE<<1) : MAX_SIZE;
 
+        uint audio_offset = get_write_offset(&dvi0.audio_ring);
         for (int cnt = 0; cnt < size; cnt++) 
         {
-            audio_ptr->channels[0] = commodore_argentina[sample_count % commodore_argentina_len] << 8;
-            audio_ptr->channels[1] = commodore_argentina[(sample_count+1024) % commodore_argentina_len] << 8;
+            audio_buffer[audio_offset].channels[0] = commodore_argentina[sample_count % commodore_argentina_len] << 8;
+            audio_buffer[audio_offset].channels[1] = commodore_argentina[(sample_count+1024) % commodore_argentina_len] << 8;
             sample_count = (sample_count + 1) % commodore_argentina_len;
-            audio_ptr++;
+            audio_offset = (audio_offset + 1) & (AUDIO_BUFFER_SIZE-1);
         }
-        increase_write_pointer(&dvi0.audio_ring, size);
-
-        if (size < MAX_SIZE)
-        {
-            int sizeleft = get_write_size(&dvi0.audio_ring, false);
-            audio_ptr = get_write_pointer(&dvi0.audio_ring);
-            sizeleft = ((sizeleft + size) >MAX_SIZE) ?  (MAX_SIZE - size) : sizeleft; 
-
-            for (int cnt = 0; cnt < sizeleft; cnt++) 
-            {
-                audio_ptr->channels[0] = commodore_argentina[sample_count % commodore_argentina_len] << 8;
-                audio_ptr->channels[1] = commodore_argentina[(sample_count+1024) % commodore_argentina_len] << 8;
-                sample_count = (sample_count + 1) % commodore_argentina_len;
-                audio_ptr++;
-            }
-            increase_write_pointer(&dvi0.audio_ring, sizeleft);
-        }
+        set_write_offset(&dvi0.audio_ring, audio_offset);
     }
     if (call_count == TICKCOUNT)
     {
+        call_count = 0;
         sem_release(&fifty_hz);
     }
     return true;
@@ -132,17 +115,25 @@ int main()
     dvi_get_blank_settings(&dvi0)->top    = 0;
     dvi_get_blank_settings(&dvi0)->bottom = 0;
     dvi_audio_sample_buffer_set(&dvi0, audio_buffer, AUDIO_BUFFER_SIZE);
+    ring = &dvi0.audio_ring;
+    set_write_offset(ring, AUDIO_BUFFER_SIZE>>1);
+
     dvi_set_audio_freq(&dvi0, AUDIO_RATE, dvi0.timing->bit_clk_khz*HDMI_N/(AUDIO_RATE/1000)/128, HDMI_N);
 
 	printf("Set CTS %i\n", dvi0.timing->bit_clk_khz*HDMI_N/(AUDIO_RATE/1000)/128);
 
     sem_init(&fifty_hz, 0, 1);
+    sem_init(&init, 0, 1);
  
     // launch all the video on core 1
     multicore_launch_core1(core1_main);
+    sem_acquire_blocking(&init);
     add_repeating_timer_ms(-TICKMS, audio_timer_callback, NULL, &audio_timer);
 
-	while(1) __wfi();
+	while(1) 
+    {
+        sem_acquire_blocking(&fifty_hz);
+    }
 }
 	
 static void __not_in_flash_func(render_loop)()
@@ -172,5 +163,6 @@ static void core1_main()
 {
 	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
 	dvi_start(&dvi0);
+    sem_release(&init);
     render_loop();
 }
