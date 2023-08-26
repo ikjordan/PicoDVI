@@ -29,7 +29,7 @@ inline static void increase_read_pointer(audio_ring_t *audio_ring, uint32_t size
 inline static void set_write_offset(audio_ring_t *audio_ring, uint32_t v) {audio_ring->write = v; __dmb();}
 inline static void set_read_offset(audio_ring_t *audio_ring, uint32_t v){audio_ring->read = v; __dmb();}
 void audio_ring_set(audio_ring_t *audio_ring, audio_sample_t *buffer, uint32_t size);
-uint32_t get_write_size(audio_ring_t *audio_ring);
+uint32_t get_write_size(audio_ring_t *audio_ring, bool full);
 uint32_t get_read_size(audio_ring_t *audio_ring, bool full);
 
 #ifdef __cplusplus
