@@ -22,7 +22,7 @@ void dvi_init(struct dvi_inst *inst, uint spinlock_tmds_queue, uint spinlock_col
     inst->dvi_started = false;
     inst->timing_state.v_ctr  = 0;
     inst->dvi_frame_count = 0;
-    
+
     dvi_audio_init(inst);
     dvi_timing_state_init(&inst->timing_state);
     dvi_serialiser_init(&inst->ser_cfg);
@@ -60,7 +60,8 @@ void dvi_init(struct dvi_inst *inst, uint spinlock_tmds_queue, uint spinlock_col
         queue_add_blocking_u32(&inst->q_tmds_free, &tmdsbuf);
     }
 
-    set_AVI_info_frame(&inst->avi_info_frame, UNDERSCAN, RGB, ITU601, PIC_ASPECT_RATIO_4_3, SAME_AS_PAR, FULL, _640x480P60);
+    set_AVI_info_frame(&inst->avi_info_frame, UNDERSCAN, RGB, ITU601, PIC_ASPECT_RATIO_4_3, SAME_AS_PAR, FULL,
+                       (inst->timing->h_active_pixels == 720) ? _720x576P50 : _640x480P60);
 
 }
 
@@ -220,13 +221,13 @@ static void __dvi_func(dvi_dma_irq_handler)(struct dvi_inst *inst) {
     // now have until the end of this region to generate DMA blocklist for next
     // scanline.
     dvi_timing_state_advance(inst->timing, &inst->timing_state);
-    
+
     // Make sure all three channels have definitely loaded their last block
     // (should be within a few cycles of one another)
     for (int i = 0; i < N_TMDS_LANES; ++i) {
         while (dma_debug_hw->ch[inst->dma_cfg[i].chan_data].tcr != inst->timing->h_active_pixels / DVI_SYMBOLS_PER_WORD) {
             tight_loop_contents();
-        }    
+        }
     }
 
     if (inst->tmds_buf_release[1] && !queue_try_add_u32(&inst->q_tmds_free, &inst->tmds_buf_release[1])) {
@@ -248,7 +249,7 @@ static void __dvi_func(dvi_dma_irq_handler)(struct dvi_inst *inst) {
         case DVI_STATE_ACTIVE:
         {
             bool is_blank_line = false;
-            if (inst->timing_state.v_ctr < inst->blank_settings.top || 
+            if (inst->timing_state.v_ctr < inst->blank_settings.top ||
                 inst->timing_state.v_ctr >= (inst->timing->v_active_lines - inst->blank_settings.bottom)) {
                 // Is a Blank Line
                 is_blank_line = true;
@@ -279,7 +280,7 @@ static void __dvi_func(dvi_dma_irq_handler)(struct dvi_inst *inst) {
             } else {
                 dma_list_selected = &inst->dma_list_error;
             }
-            
+
             if (inst->scanline_callback && inst->timing_state.v_ctr % DVI_VERTICAL_REPEAT == DVI_VERTICAL_REPEAT - 1) {
                 inst->scanline_callback(inst->timing_state.v_ctr / DVI_VERTICAL_REPEAT);
             }
@@ -363,7 +364,7 @@ void dvi_audio_sample_buffer_set(struct dvi_inst *inst, audio_sample_t *buffer, 
 // CTS: Cycle Time Stamp
 // N: HDMI Constant
 // 128 * audio_freq = video_freq * N / CTS
-// e.g.: video_freq = 23495525, audio_freq = 44100 , CTS = 28000, N = 6727 
+// e.g.: video_freq = 23495525, audio_freq = 44100 , CTS = 28000, N = 6727
 void dvi_set_audio_freq(struct dvi_inst *inst, int audio_freq, int cts, int n) {
     inst->audio_freq = audio_freq;
     set_audio_clock_regeneration(&inst->audio_clock_regeneration, cts, n);
@@ -405,7 +406,7 @@ bool __dvi_func(dvi_update_data_packet_)(struct dvi_inst *inst, data_packet_t *p
     int sample_pos_24 = inst->audio_sample_pos >> 24;
     int read_size = get_read_size(&inst->audio_ring, false);
     int n = MIN(4, MIN(sample_pos_24, read_size));
-    inst->audio_sample_pos -= n << 24;
+    inst->audio_sample_pos -= (n << 24);
     if (n)
     {
         audio_sample_t *audio_sample_ptr = get_read_pointer(&inst->audio_ring);

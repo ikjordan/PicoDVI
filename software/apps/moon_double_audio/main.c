@@ -14,12 +14,15 @@
 #include "moon_1bpp_640x480.h"
 #define moon_img moon_1bpp_640x480
 #define IMAGE_WIDTH 640
-  
-#if 1
-#define AUDIO_RATE 32000    // Audio Sample rate
+//#define AUDIO_RATE 32000
+//#define AUDIO_RATE 44100
+#define AUDIO_RATE 48000
+
+#if (AUDIO_RATE == 32000)
 #define HDMI_N     4096     // From HDMI standard for 32kHz
+#elif (AUDIO_RATE == 44100)
+#define HDMI_N     6272     // From HDMI standard for 44.1kHz
 #else
-#define AUDIO_RATE 48000    // Audio Sample rate
 #define HDMI_N     6144     // From HDMI standard for 48kHz
 #endif
 
@@ -38,8 +41,8 @@ static void core1_main();
 // but playback set to 32kHz
 
 // Pick one:
-//#define MODE_640x480_60Hz
-#define MODE_720x540_50Hz
+#define MODE_640x480_60Hz
+//#define MODE_720x540_50Hz
 //#define MODE_720x576_50Hz
 
 #if defined(MODE_640x480_60Hz)
@@ -62,8 +65,6 @@ static void core1_main();
 struct dvi_inst dvi0;
 audio_ring_t* ring;
 static uint32_t call_count = 0;
-static uint32_t last_fault = 0;
-static int d=0;
 
 //Audio Related
 #define AUDIO_BUFFER_SIZE   (0x1 << 9)  // Must be power of two
@@ -73,16 +74,23 @@ struct repeating_timer audio_timer;
 static bool __not_in_flash_func(audio_timer_callback)(struct repeating_timer *t) 
 {
     static uint sample_count = 0;
-    ++call_count;
+    // write in chunks
+    int size = get_write_size(&dvi0.audio_ring, true);
+#if (AUDIO_RATE != 44100)
+    if (size >= MAX_SIZE)
+    {
+        size = (size > ((3*AUDIO_BUFFER_SIZE)>>2)) ? (MAX_SIZE<<1) : MAX_SIZE;
+#else
+    static uint8_t sam_size[TICKCOUNT] = {88, 88, 88, 88, 89, 88, 88, 88, 88,89};
 
     // write in chunks
-    int size = get_write_size(&dvi0.audio_ring);
-    if (size >= MAX_SIZE)
-    {   
-        size = (size > ((3*AUDIO_BUFFER_SIZE)>>2)) ? (MAX_SIZE<<1) : MAX_SIZE;
+    if (size >= sam_size[call_count])
+    {
+        size = (size > ((3*AUDIO_BUFFER_SIZE)>>2)) ? sam_size[call_count] + sam_size[(call_count+1)%TICKCOUNT]: sam_size[call_count];
+#endif
 
         uint audio_offset = get_write_offset(&dvi0.audio_ring);
-        for (int cnt = 0; cnt < size; cnt++) 
+        for (int cnt = 0; cnt < size; cnt++)
         {
             audio_buffer[audio_offset].channels[0] = commodore_argentina[sample_count % commodore_argentina_len] << 8;
             audio_buffer[audio_offset].channels[1] = commodore_argentina[(sample_count+1024) % commodore_argentina_len] << 8;
@@ -91,6 +99,7 @@ static bool __not_in_flash_func(audio_timer_callback)(struct repeating_timer *t)
         }
         set_write_offset(&dvi0.audio_ring, audio_offset);
     }
+    ++call_count;
     if (call_count == TICKCOUNT)
     {
         call_count = 0;
@@ -99,7 +108,7 @@ static bool __not_in_flash_func(audio_timer_callback)(struct repeating_timer *t)
     return true;
 }
 
-int main() 
+int main()
 {
 	set_sys_clock_khz(DVI_TIMING.bit_clk_khz, true);
 	setup_default_uart();
@@ -118,19 +127,20 @@ int main()
     ring = &dvi0.audio_ring;
     set_write_offset(ring, AUDIO_BUFFER_SIZE>>1);
 
-    dvi_set_audio_freq(&dvi0, AUDIO_RATE, dvi0.timing->bit_clk_khz*HDMI_N/(AUDIO_RATE/1000)/128, HDMI_N);
+    dvi_set_audio_freq(&dvi0, AUDIO_RATE, dvi0.timing->bit_clk_khz*HDMI_N/(AUDIO_RATE/100)/128, HDMI_N);
 
-	printf("Set CTS %i\n", dvi0.timing->bit_clk_khz*HDMI_N/(AUDIO_RATE/1000)/128);
+	printf("FReq %i Set CTS %i\n", dvi0.timing->bit_clk_khz, dvi0.timing->bit_clk_khz*HDMI_N/(AUDIO_RATE/100)/128);
+
 
     sem_init(&fifty_hz, 0, 1);
     sem_init(&init, 0, 1);
- 
+
     // launch all the video on core 1
     multicore_launch_core1(core1_main);
     sem_acquire_blocking(&init);
     add_repeating_timer_ms(-TICKMS, audio_timer_callback, NULL, &audio_timer);
 
-	while(1) 
+	while(1)
     {
         sem_acquire_blocking(&fifty_hz);
     }
@@ -138,7 +148,7 @@ int main()
 	
 static void __not_in_flash_func(render_loop)()
 {
-	while (true) 
+	while (true)
     {
 		for (uint y = 0; y < FRAME_HEIGHT/2; ++y)
         {

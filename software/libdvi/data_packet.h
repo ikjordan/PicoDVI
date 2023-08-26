@@ -65,6 +65,7 @@ typedef enum {
     _720x480P60 = 2,
     _1280x720P60 = 4,
     _1920x1080I60 = 5,
+    _720x576P50 = 17
 } video_code;
 
 typedef struct data_packet {

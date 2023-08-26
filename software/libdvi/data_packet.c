@@ -1,5 +1,6 @@
 #include "data_packet.h"
 #include <string.h>
+#include "pico/stdlib.h"
 
 // Compute 8 Parity Start
 // Parity table is build statically with the following code
@@ -208,7 +209,7 @@ void __not_in_flash_func(set_null)(void *data, int size) {
 int  __not_in_flash_func(set_audio_sample)(data_packet_t *data_packet, const audio_sample_t *p, int n, int frameCt) {
     const int layout = 0;
     const int samplePresent = (1 << n) - 1;
-    const int B = frameCt < 4 ? 1 << frameCt : 0;
+    const int B = (frameCt < n) ? (1 << frameCt) : 0;
     data_packet->header[0] = 2;
     data_packet->header[1] = (layout << 4) | samplePresent;
     data_packet->header[2] = B << 4;
@@ -216,31 +217,33 @@ int  __not_in_flash_func(set_audio_sample)(data_packet_t *data_packet, const aud
 
     for (int i = 0; i < n; ++i)
     {
+        uint8_t *d = data_packet->subpacket[i];
         const int16_t l = (*p).channels[0];
         const int16_t r = (*p).channels[1];
         const uint8_t vuc = 1; // valid
-        uint8_t *d = data_packet->subpacket[i];
         d[0] = 0;
         d[1] = l;
         d[2] = l >> 8;
         d[3] = 0;
         d[4] = r;
         d[5] = r >> 8;
-
+        ++p;
         bool pl = compute8_3(d[1], d[2], vuc);
         bool pr = compute8_3(d[4], d[5], vuc);
         d[6] = (vuc << 0) | (pl << 3) | (vuc << 4) | (pr << 7);
         compute_subpacket_parity(data_packet, i);
-        ++p;
+
         // channel status (is it relevant?)
+        // After testing, seems better to ignore
+        frameCt--;
+        if (frameCt < 0)
+        {
+            frameCt = 191;
+        }
     }
     set_null(data_packet->subpacket[n], sizeof(data_packet->subpacket[0]) * (4 - n));
     // dump();
 
-    frameCt -= n;
-    if (frameCt < 0) {
-        frameCt += 192;
-    }
     return frameCt;
 }
 
