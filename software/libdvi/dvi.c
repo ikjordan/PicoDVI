@@ -18,6 +18,15 @@ static struct dvi_inst *dma_irq_privdata[2];
 static void dvi_dma0_irq();
 static void dvi_dma1_irq();
 
+static inline void dvi_update_data_packet(struct dvi_inst *inst) {
+    data_packet_t packet;
+    if (!dvi_update_data_packet_(inst, &packet)) {
+        set_null(&packet, sizeof(data_packet_t));
+    }
+    bool vsync = inst->timing_state.v_state == DVI_STATE_SYNC;
+    encode(&inst->next_data_stream, &packet, inst->timing->v_sync_polarity == vsync, inst->timing->h_sync_polarity);
+}
+
 void dvi_init(struct dvi_inst *inst, uint spinlock_tmds_queue, uint spinlock_colour_queue) {
     inst->dvi_started = false;
     inst->timing_state.v_ctr  = 0;
