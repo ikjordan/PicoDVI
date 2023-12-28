@@ -92,8 +92,8 @@ uint16_t __not_in_flash_func(TERC4Syms_)[16] = {
     0b1011000011,
 };
 
-uint32_t inline makeTERC4x2Char(int i) { return TERC4Syms_[i] | (TERC4Syms_[i] << 10); }
-uint32_t inline makeTERC4x2Char_2(int i0, int i1) { return TERC4Syms_[i0] | (TERC4Syms_[i1] << 10); }
+static inline uint32_t makeTERC4x2Char(int i) { return TERC4Syms_[i] | (TERC4Syms_[i] << 10); }
+static inline uint32_t makeTERC4x2Char_2(int i0, int i1) { return TERC4Syms_[i0] | (TERC4Syms_[i1] << 10); }
 #define TERC4_0x2CharSym_ 0x000A729C // Build time generated -> makeTERC4x2Char(0);
 #define dataGaurdbandSym_ 0x0004CD33 // Build time generated -> 0b0100110011'0100110011;
 uint32_t __not_in_flash_func(defaultDataPacket12_)[N_DATA_ISLAND_WORDS] = {
