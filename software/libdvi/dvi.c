@@ -46,7 +46,7 @@ void dvi_init(struct dvi_inst *inst, uint spinlock_tmds_queue, uint spinlock_col
 #if DVI_MONOCHROME_TMDS
 		tmdsbuf = malloc(len);
 #else
-		tmdsbuf = malloc(len);
+		tmdsbuf = malloc(3 * len);
 #endif
 		if (!tmdsbuf)
 			panic("TMDS buffer allocation failed");
