@@ -8,7 +8,7 @@ This repo adds to the following features to PicoDVI
     + `moon_double_audio`: A bit doubled version of the `moon` demo that includes audio (spoken voice)
     + `sprite_bounce_audio`: Adds an audio sine wave to the `sprite_bounce_demo` - caution this is quite loud!
     + `colour_terminal_audio`: Adds spoken voice audio to the `colour_terminal` demo
-2. 50 Hz DVI modes have been added. Small changes were needed to the base code as a pixel width of 768 is not divisible by 32.
+2. 50 Hz DVI modes have been added. Small changes were needed to the base code as a pixel width of 720 is not divisible by 32.
 3. A board configuration for Olimex. Set `DVI_DEFAULT_SERIAL_CONFIG` equal to `Olimex_RP2040_PICO_PC_cfg`
 4. Stereo PWM sound for Olimexpc. The supplied PicoDVI code from Olimex uses PWM to generate the DVI clock on pins 12 and 13. The boards audio output is on pins 27 and 28. Pin 28 and pin 12 are on the same PWM channel (6A), so it is not possible to configure different PWM clock frequencies for the two pins. In effect this means that PWM stereo sound does not work with the supplied Olimex PicoDVI code. The code in this repo can optionally generate the DVI clock using a very simple PIO state machine, so that pins 27 and 28 can then be driven to generate PWM audio. To enable this set `DVI_USE_PIO_CLOCK`
 
