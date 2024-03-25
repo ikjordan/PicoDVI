@@ -21,5 +21,7 @@ target_link_libraries(colour_terminal_audio
 	libdvi
 )
 
+# pico_enable_stdio_uart(colour_terminal_audio 1)
+
 # create map/bin/hex file etc.
 pico_add_extra_outputs(colour_terminal_audio)

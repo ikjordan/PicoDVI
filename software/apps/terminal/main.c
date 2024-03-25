@@ -73,7 +73,7 @@ struct semaphore dvi_start_sem;
 #define CHAR_ROWS (FRAME_HEIGHT / FONT_CHAR_HEIGHT)
 char charbuf[CHAR_ROWS * CHAR_COLS];
 
-static inline void prepare_scanline(const char *chars, uint y) {
+static inline void __not_in_flash_func(prepare_scanline)(const char *chars, uint y) {
 	static uint8_t scanbuf[FRAME_WIDTH / 8];
 	// First blit font into 1bpp scanline buffer, then encode scanbuf into tmdsbuf
 	for (uint i = 0; i < CHAR_COLS; ++i) {
@@ -86,13 +86,13 @@ static inline void prepare_scanline(const char *chars, uint y) {
 	queue_add_blocking(&dvi0.q_tmds_valid, &tmdsbuf);
 }
 
-void core1_scanline_callback() {
+void __not_in_flash_func(core1_scanline_callback)() {
 	static uint y = 1;
 	prepare_scanline(charbuf, y);
 	y = (y + 1) % FRAME_HEIGHT;
 }
 
-void __not_in_flash("main") core1_main() {
+void __not_in_flash_func(core1_main)() {
 	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
 	sem_acquire_blocking(&dvi_start_sem);
 	dvi_start(&dvi0);
@@ -104,7 +104,7 @@ void __not_in_flash("main") core1_main() {
 	__builtin_unreachable();
 }
 
-int __not_in_flash("main") main() {
+int __not_in_flash_func(main)() {
 	vreg_set_voltage(VREG_VSEL);
 	sleep_ms(10);
 #ifdef RUN_FROM_CRYSTAL
