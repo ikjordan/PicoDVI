@@ -63,22 +63,6 @@ const struct dvi_timing __dvi_const(dvi_timing_800x600p_60hz) = {
 	.bit_clk_khz       = 400000
 };
 
-const struct dvi_timing __dvi_const(dvi_timing_720x480p_60hz) = {
-	.h_sync_polarity   = false,
-	.h_front_porch     = 16,
-	.h_sync_width      = 62,
-	.h_back_porch      = 60,
-	.h_active_pixels   = 720,
-
-	.v_sync_polarity   = false,
-	.v_front_porch     = 9,
-	.v_sync_width      = 6,
-	.v_back_porch      = 30,
-	.v_active_lines    = 480,
-
-	.bit_clk_khz       = 270000
-};
-
 // 720x576@50Hz - CEA timing
 const struct dvi_timing __dvi_const(dvi_timing_720x576p_50hz) = {
 	.h_sync_polarity   = false,
