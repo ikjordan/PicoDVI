@@ -206,7 +206,7 @@ void __not_in_flash_func(set_null)(void *data, int size) {
     }
 }
 
-int  __not_in_flash_func(set_audio_sample)(data_packet_t *data_packet, const audio_sample_t *p, int n, int frameCt) {
+int  __not_in_flash_func(set_audio_sample)(data_packet_t *data_packet, audio_ring_t *audio_ring, const int n, int frameCt) {
     const int layout = 0;
     const int samplePresent = (1 << n) - 1;
     const int B = (frameCt < n) ? (1 << frameCt) : 0;
@@ -214,24 +214,34 @@ int  __not_in_flash_func(set_audio_sample)(data_packet_t *data_packet, const aud
     data_packet->header[1] = (layout << 4) | samplePresent;
     data_packet->header[2] = B << 4;
     compute_header_parity(data_packet);
+    const int read_size = get_read_size(audio_ring, true);
 
     for (int i = 0; i < n; ++i)
     {
-        uint8_t *d = data_packet->subpacket[i];
-        const int16_t l = (*p).channels[0];
-        const int16_t r = (*p).channels[1];
+        int16_t l, r;
+        if (i < read_size) {
+            audio_sample_t *audio_sample_ptr = get_read_pointer(audio_ring);
+            l = (*audio_sample_ptr).channels[0];
+            r = (*audio_sample_ptr).channels[1];
+            increase_read_pointer(audio_ring, 1);
+        }
+        else {
+            l = (int16_t)0;
+            r = (int16_t)0;
+        }
+
         const uint8_t vuc = 1; // valid
+        uint8_t *d = data_packet->subpacket[i];
         d[0] = 0;
         d[1] = l;
         d[2] = l >> 8;
         d[3] = 0;
         d[4] = r;
         d[5] = r >> 8;
-        ++p;
         bool pl = compute8_3(d[1], d[2], vuc);
         bool pr = compute8_3(d[4], d[5], vuc);
         d[6] = (vuc << 0) | (pl << 3) | (vuc << 4) | (pr << 7);
-        compute_subpacket_parity(data_packet, i);
+        d[7] = encode_BCH_7(d);
 
         // channel status (is it relevant?)
         // After testing, seems better to ignore

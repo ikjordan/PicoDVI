@@ -412,16 +412,12 @@ bool __dvi_func(dvi_update_data_packet_)(struct dvi_inst *inst, data_packet_t *p
             return true;
         }
     }
-    int sample_pos_24 = inst->audio_sample_pos >> 24;
-    int read_size = get_read_size(&inst->audio_ring, false);
-    int n = MIN(4, MIN(sample_pos_24, read_size));
-    inst->audio_sample_pos -= (n << 24);
+    const int sample_pos_24 = inst->audio_sample_pos >> 24;
+    const int n = MIN(4, sample_pos_24);
     if (n)
     {
-        audio_sample_t *audio_sample_ptr = get_read_pointer(&inst->audio_ring);
-        inst->audio_frame_count = set_audio_sample(packet, audio_sample_ptr, n, inst->audio_frame_count);
-        increase_read_pointer(&inst->audio_ring, n);
-
+        inst->audio_sample_pos -= (n << 24);
+        inst->audio_frame_count = set_audio_sample(packet, &inst->audio_ring, n, inst->audio_frame_count);
         return true;
     }
 

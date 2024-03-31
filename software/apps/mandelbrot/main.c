@@ -26,14 +26,14 @@
 struct dvi_inst dvi0;
 uint16_t framebuf[FRAME_WIDTH * FRAME_HEIGHT];
 
-void core1_main() {
+void __not_in_flash_func(core1_main)() {
 	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
 	dvi_start(&dvi0);
 	dvi_scanbuf_main_16bpp(&dvi0);
 	__builtin_unreachable();
 }
 
-void core1_scanline_callback() {
+void __not_in_flash_func(core1_scanline_callback)() {
 	// Discard any scanline pointers passed back
 	uint16_t *bufptr;
 	while (queue_try_remove_u32(&dvi0.q_colour_free, &bufptr))
@@ -45,7 +45,7 @@ void core1_scanline_callback() {
 	scanline = (scanline + 1) % FRAME_HEIGHT;
 }
 
-int main() {
+int __not_in_flash_func(main)() {
 	vreg_set_voltage(VREG_VSEL);
 	sleep_ms(10);
 #ifdef RUN_FROM_CRYSTAL
