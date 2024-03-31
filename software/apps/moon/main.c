@@ -102,10 +102,11 @@ int main() {
 #endif
 
 	dvi_start(&dvi0);
+	uint32_t *tmdsbuf = 0;
+
 	while (true) {
 		for (uint y = 0; y < FRAME_HEIGHT; ++y) {
 			const uint32_t *colourbuf = &((const uint32_t*)moon_img)[y * IMAGE_WIDTH / 32];
-			uint32_t *tmdsbuf;
 			queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmdsbuf);
 #ifndef USE_PIO_TMDS_ENCODE
 			tmds_encode_1bpp(colourbuf, tmdsbuf, FRAME_WIDTH);

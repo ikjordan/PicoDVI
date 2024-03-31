@@ -173,9 +173,9 @@ int main() {
     }
 
 	uint frame_ctr = 0;
+	uint16_t *scanbuf = 0;
 	while (true) {
 		for (uint y = 0; y < FRAME_HEIGHT; ++y) {
-			uint16_t *scanbuf;
 			queue_remove_blocking_u32(&dvi0.q_colour_free, &scanbuf);
 			render_scanline(scanbuf, y);
 			queue_add_blocking_u32(&dvi0.q_colour_valid, &scanbuf);

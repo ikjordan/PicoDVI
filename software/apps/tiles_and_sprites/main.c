@@ -251,9 +251,9 @@ int main() {
 
 	printf("Start rendering\n");
 	game_init(&state);
+	uint32_t *tmds0 = 0, *tmds1 = 0;
 	while (1) {
 		for (uint y = 0; y < FRAME_HEIGHT; y += 2) {
-			uint32_t *tmds0, *tmds1;
 			queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmds0);
 			queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmds1);
 			multicore_fifo_push_blocking((uintptr_t)tmds1);

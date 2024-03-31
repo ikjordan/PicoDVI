@@ -71,12 +71,12 @@ static const struct dvi_serialiser_cfg pico_sock_cfg = {
 
 // pico-RGB2HDMI
 static const struct dvi_serialiser_cfg pico_rgb2hdmi_cfg = {
-        .pio = pio0,
-        .sm_tmds = {0, 1, 2},
-        .pins_tmds = {5, 7, 9},
-        .pins_clk = 3,
-        .invert_diffpairs = true
-    };
+	.pio = pio0,
+	.sm_tmds = {0, 1, 2},
+	.pins_tmds = {5, 7, 9},
+	.pins_clk = 3,
+	.invert_diffpairs = true
+};
 
 // The HDMI socket on Pimoroni Pico Demo HDMI
 // (we would talk about rev B if we had a rev B...)

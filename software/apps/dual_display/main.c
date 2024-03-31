@@ -32,11 +32,11 @@ void display_scrolling_testcard(struct dvi_inst *inst, const uint8_t *img) {
 	const uint blue_lsb  = 0;
 	uint pixwidth = inst->timing->h_active_pixels;
 	uint frame_ctr = 0;
+	uint32_t *tmdsbuf = 0;
 	while (true) {
 		for (uint y = 0; y < FRAME_HEIGHT; ++y) {
 			uint y_scroll = (y + frame_ctr) % FRAME_HEIGHT;
 			const uint8_t *colourbuf = &((const uint8_t*)img)[y_scroll * FRAME_WIDTH];
-			uint32_t *tmdsbuf;
 			queue_remove_blocking_u32(&inst->q_tmds_free, &tmdsbuf);
 			// NB the scanline buffers are half-resolution!
 			tmds_encode_data_channel_8bpp((const uint32_t*)colourbuf, tmdsbuf, pixwidth / 2, blue_msb, blue_lsb);
