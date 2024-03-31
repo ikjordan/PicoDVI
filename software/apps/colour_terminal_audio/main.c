@@ -145,7 +145,7 @@ int __not_in_flash("main") main() {
 	// Run system at TMDS bit clock
 	set_sys_clock_khz(DVI_TIMING.bit_clk_khz, true);
 
-    // setup_default_uart();
+	// setup_default_uart();
 
 	dvi0.timing = &DVI_TIMING;
 	dvi0.ser_cfg = DVI_DEFAULT_SERIAL_CONFIG;
@@ -160,12 +160,12 @@ int __not_in_flash("main") main() {
 
 	hw_set_bits(&bus_ctrl_hw->priority, BUSCTRL_BUS_PRIORITY_PROC1_BITS);
 
-     // HDMI Audio related
-    dvi_get_blank_settings(&dvi0)->top    = 4 * 0;
-    dvi_get_blank_settings(&dvi0)->bottom = 4 * 0;
-    dvi_audio_sample_buffer_set(&dvi0, audio_buffer, AUDIO_BUFFER_SIZE);
-    dvi_set_audio_freq(&dvi0, 44100, 28000, 6272);
-    add_repeating_timer_ms(-2, audio_timer_callback, NULL, &audio_timer);
+	// HDMI Audio related
+	dvi_get_blank_settings(&dvi0)->top    = 4 * 0;
+	dvi_get_blank_settings(&dvi0)->bottom = 4 * 0;
+	dvi_audio_sample_buffer_set(&dvi0, audio_buffer, AUDIO_BUFFER_SIZE);
+	dvi_set_audio_freq(&dvi0, 44100, 28000, 6272);
+	add_repeating_timer_ms(-2, audio_timer_callback, NULL, &audio_timer);
 
 	printf("starting...\n");
 

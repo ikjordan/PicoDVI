@@ -118,6 +118,7 @@ int __not_in_flash("main") main() {
 	uint heartbeat = 0;
 	uint slideshow_ctr = 0;
 	uint32_t current_image_base = IMAGE_BASE;
+	uint32_t *our_tmds_buf = 0, *their_tmds_buf = 0;
 
 	sem_release(&dvi_start_sem);
 	while (1) {
@@ -138,7 +139,6 @@ int __not_in_flash("main") main() {
 				img_dma_chan
 			);
 			const uint16_t *img = (const uint16_t*)img_buf[img_buf_front];			
-			uint32_t *our_tmds_buf, *their_tmds_buf;
 			queue_remove_blocking_u32(&dvi0.q_tmds_free, &their_tmds_buf);
 			multicore_fifo_push_blocking((uint32_t)(img));
 			multicore_fifo_push_blocking((uint32_t)their_tmds_buf);

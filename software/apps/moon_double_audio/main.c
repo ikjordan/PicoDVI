@@ -148,12 +148,13 @@ int main()
 	
 static void __not_in_flash_func(render_loop)()
 {
+    uint32_t *tmdsbuf = 0;
+
 	while (true)
     {
 		for (uint y = 0; y < FRAME_HEIGHT/2; ++y)
         {
 			const uint32_t *colourbuf = &((const uint32_t*)moon_img)[(y + (FRAME_HEIGHT >> 3))* IMAGE_WIDTH / 32];
-			uint32_t *tmdsbuf;
 			queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmdsbuf);
 
             // 32 pixels create 8 * 2 32 bit words
