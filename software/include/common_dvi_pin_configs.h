@@ -115,4 +115,11 @@ static const struct dvi_serialiser_cfg Olimex_RP2040_PICO_PC_cfg = {
 	.invert_diffpairs = true
 };
 
+static const struct dvi_serialiser_cfg waveshare_rp2040_pizero_hdmi_cfg = {
+	.pio = pio0,
+	.sm_tmds = {0, 1, 2},
+	.pins_tmds = {26, 24, 22},
+	.pins_clk = 28,
+	.invert_diffpairs = false
+};
 #endif
