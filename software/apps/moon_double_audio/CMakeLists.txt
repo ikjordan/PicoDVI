@@ -3,7 +3,6 @@
 add_executable(moon_double_audio
 	main.c
 	tmds_double.S
-	tmds_double.h
 )
 
 target_compile_options(moon_double_audio PRIVATE -Wall)
