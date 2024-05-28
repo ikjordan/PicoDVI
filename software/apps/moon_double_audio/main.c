@@ -41,9 +41,9 @@ static void core1_main();
 // but playback set to 32kHz
 
 // Pick one:
-#define MODE_640x480_60Hz
+//#define MODE_640x480_60Hz
 //#define MODE_720x540_50Hz
-//#define MODE_720x576_50Hz
+#define MODE_720x576_50Hz
 
 #if defined(MODE_640x480_60Hz)
 #define FRAME_WIDTH 640
@@ -129,7 +129,7 @@ int main()
 
     dvi_set_audio_freq(&dvi0, AUDIO_RATE, dvi0.timing->bit_clk_khz*HDMI_N/(AUDIO_RATE/100)/128, HDMI_N);
 
-	printf("FReq %i Set CTS %i\n", dvi0.timing->bit_clk_khz, dvi0.timing->bit_clk_khz*HDMI_N/(AUDIO_RATE/100)/128);
+	printf("Freq %i Set CTS %i\n", dvi0.timing->bit_clk_khz, dvi0.timing->bit_clk_khz*HDMI_N/(AUDIO_RATE/100)/128);
 
 
     sem_init(&fifty_hz, 0, 1);
@@ -154,16 +154,9 @@ static void __not_in_flash_func(render_loop)()
     {
 		for (uint y = 0; y < FRAME_HEIGHT/2; ++y)
         {
-			const uint32_t *colourbuf = &((const uint32_t*)moon_img)[(y + (FRAME_HEIGHT >> 3))* IMAGE_WIDTH / 32];
+			const uint8_t *colourbuf = (const uint8_t*)&moon_img[(y + (FRAME_HEIGHT >> 3))* IMAGE_WIDTH / 8];
 			queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmdsbuf);
 
-            // 32 pixels create 8 * 2 32 bit words
-            // tmds_double_1bpp requires multiple of 32 pixels
-            // For input of 360 to generate 720 pixels:
-            // 360 pixels -> 11.25 32 bit words
-            // Will therefore generate 12 * 32 * 2 pixels = 768
-            // tmdsbuf size must be rounded up to multiple of 64
-            // in dvi.c
 			tmds_double_1bpp(colourbuf, tmdsbuf, FRAME_WIDTH);
 			queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmdsbuf);
 		}

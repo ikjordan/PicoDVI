@@ -55,7 +55,11 @@ void dvi_init(struct dvi_inst *inst, uint spinlock_tmds_queue, uint spinlock_col
     dvi_setup_scanline_for_active(inst->timing, inst->dma_cfg, NULL, &inst->dma_list_error, false);
     dvi_setup_scanline_for_active(inst->timing, inst->dma_cfg, NULL, &inst->dma_list_active_blank, true);
 
-    uint16_t mask = 0x3f;  // To account for worst case of monochrome horizontal pixel doubling
+    uint16_t mask = 0;
+
+#ifdef DVI_1BPP_BUFFER
+    mask = 0x1f;  // To account for worst case of 1bpp horizontal pixels generated 32 bits at a time (e.g. 720x568)
+#endif
 
     for (int i = 0; i < DVI_N_TMDS_BUFFERS; ++i) {
 #if DVI_MONOCHROME_TMDS

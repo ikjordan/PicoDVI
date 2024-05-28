@@ -11,6 +11,7 @@ target_compile_definitions(moon PRIVATE
 	DVI_VERTICAL_REPEAT=1
 	DVI_N_TMDS_BUFFERS=3
 	DVI_MONOCHROME_TMDS
+	DVI_1BPP_BUFFER
 )
 
 target_link_libraries(moon
@@ -34,6 +35,7 @@ target_compile_definitions(moon_pio_encode PRIVATE
 	DVI_VERTICAL_REPEAT=1
 	DVI_N_TMDS_BUFFERS=3
 	DVI_MONOCHROME_TMDS
+	DVI_1BPP_BUFFER
 	USE_PIO_TMDS_ENCODE
 )
 
