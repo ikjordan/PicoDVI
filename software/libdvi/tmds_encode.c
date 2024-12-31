@@ -215,7 +215,7 @@ void tmds_setup_palette_symbols(const uint16_t *palette, uint32_t *tmds_palette,
 	uint32_t* tmds_palette_blue = tmds_palette;
 	uint32_t* tmds_palette_green = tmds_palette + 2 * n_palette;
 	uint32_t* tmds_palette_red = tmds_palette + 4 * n_palette;
-	for (int i = 0; i < n_palette; ++i) {
+	for (unsigned int i = 0; i < n_palette; ++i) {
 		uint16_t blue = (palette[i] << 3) & 0xf8;
 		uint16_t green = (palette[i] >> 3) & 0xfc;
 		uint16_t red = (palette[i] >> 8) & 0xf8;
@@ -233,7 +233,7 @@ void tmds_setup_palette24_symbols(const uint32_t *palette, uint32_t *tmds_palett
 	uint32_t* tmds_palette_blue = tmds_palette;
 	uint32_t* tmds_palette_green = tmds_palette + 2 * n_palette;
 	uint32_t* tmds_palette_red = tmds_palette + 4 * n_palette;
-	for (int i = 0; i < n_palette; ++i) {
+	for (unsigned int i = 0; i < n_palette; ++i) {
 		uint16_t blue = palette[i] & 0xff;
 		uint16_t green = (palette[i] >> 8) & 0xff;
 		uint16_t red = (palette[i] >> 16) & 0xff;

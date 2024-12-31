@@ -262,7 +262,7 @@ static void __dvi_func(dvi_dma_irq_handler)(struct dvi_inst *inst) {
         case DVI_STATE_ACTIVE:
         {
             bool is_blank_line = false;
-            if (inst->timing_state.v_ctr < inst->blank_settings.top ||
+            if ((int)(inst->timing_state.v_ctr) < inst->blank_settings.top ||
                 inst->timing_state.v_ctr >= (inst->timing->v_active_lines - inst->blank_settings.bottom)) {
                 // Is a Blank Line
                 is_blank_line = true;

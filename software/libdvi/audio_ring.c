@@ -16,7 +16,7 @@ uint32_t __not_in_flash_func(get_write_size)(audio_ring_t *audio_ring, bool full
     if (wp < rp) {
         return rp - wp - 1;
     } else {
-        return audio_ring->size - wp + (full ? rp - 1 : (rp == 0 ? -1 : 0));
+        return audio_ring->size - wp + (full ? rp - 1 : (rp == 0 ? (uint32_t)(-1) : 0));
     }
 }
 
