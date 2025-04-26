@@ -85,7 +85,7 @@ static inline void set_char(uint x, uint y, char c) {
 audio_sample_t      audio_buffer[AUDIO_BUFFER_SIZE];
 struct repeating_timer audio_timer;
 
-bool audio_timer_callback(struct repeating_timer *t) {
+bool __not_in_flash_func(audio_timer_callback)(struct repeating_timer *t) {
 	while(true) {
 		int size = get_write_size(&dvi0.audio_ring, false);
 		if (size == 0) return true;
@@ -118,7 +118,7 @@ static inline void set_colour(uint x, uint y, uint8_t fg, uint8_t bg) {
 	}
 }
 
-void core1_main() {
+void __not_in_flash_func(core1_main)() {
 	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
 	dvi_start(&dvi0);
 	while (true) {
