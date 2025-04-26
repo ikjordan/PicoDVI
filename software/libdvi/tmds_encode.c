@@ -86,7 +86,7 @@ void __not_in_flash_func(tmds_encode_data_channel_8bpp)(const uint32_t *pixbuf, 
 	int require_lshift = configure_interp_for_addrgen(interp0_hw, channel_msb, channel_lsb, 0, 8, 6, tmds_table);
 	int lshift_upper = configure_interp_for_addrgen(interp1_hw, channel_msb, channel_lsb, 16, 8, 6, tmds_table);
 	assert(!lshift_upper); (void)lshift_upper;
-	if (require_lshift)	
+	if (require_lshift || (DVI_SYMBOLS_PER_WORD==1))
 		tmds_encode_loop_8bpp_leftshift(pixbuf, symbuf, n_pix, require_lshift);
 	else
 		tmds_encode_loop_8bpp(pixbuf, symbuf, n_pix);
@@ -215,7 +215,7 @@ void tmds_setup_palette_symbols(const uint16_t *palette, uint32_t *tmds_palette,
 	uint32_t* tmds_palette_blue = tmds_palette;
 	uint32_t* tmds_palette_green = tmds_palette + 2 * n_palette;
 	uint32_t* tmds_palette_red = tmds_palette + 4 * n_palette;
-	for (int i = 0; i < n_palette; ++i) {
+	for (unsigned int i = 0; i < n_palette; ++i) {
 		uint16_t blue = (palette[i] << 3) & 0xf8;
 		uint16_t green = (palette[i] >> 3) & 0xfc;
 		uint16_t red = (palette[i] >> 8) & 0xf8;
@@ -233,7 +233,7 @@ void tmds_setup_palette24_symbols(const uint32_t *palette, uint32_t *tmds_palett
 	uint32_t* tmds_palette_blue = tmds_palette;
 	uint32_t* tmds_palette_green = tmds_palette + 2 * n_palette;
 	uint32_t* tmds_palette_red = tmds_palette + 4 * n_palette;
-	for (int i = 0; i < n_palette; ++i) {
+	for (unsigned int i = 0; i < n_palette; ++i) {
 		uint16_t blue = palette[i] & 0xff;
 		uint16_t green = (palette[i] >> 8) & 0xff;
 		uint16_t red = (palette[i] >> 16) & 0xff;

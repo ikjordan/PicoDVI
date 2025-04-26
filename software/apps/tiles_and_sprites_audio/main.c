@@ -18,6 +18,7 @@
 
 #include "tilemap.h"
 #include "zelda_mini_plus_walk_rgab5515.h"
+#include "audio.h"
 
 // Pick one:
 #define MODE_640x480_60Hz
@@ -74,7 +75,7 @@
 #define MAP_WIDTH  512
 #define MAP_HEIGHT 256
 
-#define N_CHARACTERS 100
+#define N_CHARACTERS 50
 
 typedef struct {
 	int16_t pos_x;
@@ -119,7 +120,7 @@ void game_init(game_state_t *state) {
 	}
 }
 
-void update(game_state_t *state) {
+void __not_in_flash_func(update)(game_state_t *state) {
 	static bool cointoss = false;
 	if ((cointoss = !cointoss))
 		return;
@@ -161,7 +162,7 @@ void update(game_state_t *state) {
 }
 
 
-void render_scanline(uint16_t *pixbuf, uint y, const game_state_t *gstate) {
+void __not_in_flash_func(render_scanline)(uint16_t *pixbuf, uint y, const game_state_t *gstate) {
 	tilebg_t bg = {
 		.xscroll = gstate->cam_x,
 		.yscroll = gstate->cam_y,
@@ -207,7 +208,7 @@ uint16_t __scratch_x("render") __attribute__((aligned(4))) core1_scanbuf[FRAME_W
 // - Renders own buffer and pushes to DVI queue  <- core 1 waits here before starting DVI
 // - Retrieves core 1's TMDS buffer and pushes that to DVI queue as well
 
-void encode_scanline(uint16_t *pixbuf, uint32_t *tmdsbuf) {
+void __not_in_flash_func(encode_scanline)(uint16_t *pixbuf, uint32_t *tmdsbuf) {
 	uint pixwidth = dvi0.timing->h_active_pixels;
 	uint words_per_channel = pixwidth / DVI_SYMBOLS_PER_WORD;
 	tmds_encode_data_channel_16bpp((uint32_t*)pixbuf, tmdsbuf + 0 * words_per_channel, pixwidth / 2, DVI_16BPP_BLUE_MSB,  DVI_16BPP_BLUE_LSB );
@@ -215,11 +216,7 @@ void encode_scanline(uint16_t *pixbuf, uint32_t *tmdsbuf) {
 	tmds_encode_data_channel_16bpp((uint32_t*)pixbuf, tmdsbuf + 2 * words_per_channel, pixwidth / 2, DVI_16BPP_RED_MSB,   DVI_16BPP_RED_LSB  );
 }
 
-void core1_main() {
-	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
-	while (queue_is_empty(&dvi0.q_tmds_valid))
-		__wfe();
-	dvi_start(&dvi0);
+void __not_in_flash_func(core1_loop)() {
 	while (1) {
 		for (uint y = 1; y < FRAME_HEIGHT; y += 2) {
 			render_scanline(core1_scanbuf, y, &state);
@@ -228,6 +225,62 @@ void core1_main() {
 			multicore_fifo_push_blocking((uintptr_t)tmdsbuf);
 		}
 	}
+}
+
+
+
+// ----------------------------------------------------------------------------
+//Audio Related
+
+#define AUDIO_BUFFER_SIZE   256
+audio_sample_t      audio_buffer[AUDIO_BUFFER_SIZE];
+struct repeating_timer audio_timer;
+
+bool __not_in_flash_func(audio_timer_callback)(struct repeating_timer *t) {
+	while(true) {
+		int size = get_write_size(&dvi0.audio_ring, false);
+		if (size == 0) return true;
+		audio_sample_t *audio_ptr = get_write_pointer(&dvi0.audio_ring);
+		audio_sample_t sample;
+		static uint sample_count = 0;
+		for (int cnt = 0; cnt < size; cnt++) {
+			sample.channels[0] = commodore_argentina[sample_count % commodore_argentina_len] << 8;
+			sample.channels[1] = commodore_argentina[(sample_count+1024) % commodore_argentina_len] << 8;
+			*audio_ptr++ = sample;
+			sample_count = sample_count + 1;
+		}
+		increase_write_pointer(&dvi0.audio_ring, size);
+	}
+}
+
+void __not_in_flash_func(core0_loop)() {
+	game_init(&state);
+	uint32_t *tmds0 = 0, *tmds1 = 0;
+	while (1) {
+		for (uint y = 0; y < FRAME_HEIGHT; y += 2) {
+			queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmds0);
+			queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmds1);
+			multicore_fifo_push_blocking((uintptr_t)tmds1);
+			render_scanline(core0_scanbuf, y, &state);
+			encode_scanline(core0_scanbuf, tmds0);
+			queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmds0);
+			tmds1 = (uint32_t*)multicore_fifo_pop_blocking();
+			queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmds1);
+		}
+		update(&state);
+	}
+
+	__builtin_unreachable();
+}
+
+void core1_main() {
+	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
+	add_repeating_timer_ms(-2, audio_timer_callback, NULL, &audio_timer);
+
+	while (queue_is_empty(&dvi0.q_tmds_valid))
+		__wfe();
+	dvi_start(&dvi0);
+	core1_loop();
 }
 
 int main() {
@@ -246,25 +299,17 @@ int main() {
 	dvi0.ser_cfg = DVI_DEFAULT_SERIAL_CONFIG;
 	dvi_init(&dvi0, next_striped_spin_lock_num(), next_striped_spin_lock_num());
 
+	// HDMI Audio related
+	dvi_get_blank_settings(&dvi0)->top    = 4 * 0;
+	dvi_get_blank_settings(&dvi0)->bottom = 4 * 0;
+	dvi_audio_sample_buffer_set(&dvi0, audio_buffer, AUDIO_BUFFER_SIZE);
+	dvi_set_audio_freq(&dvi0, 44100, 28000, 6272);
+
 	printf("Core 1 start\n");
 	multicore_launch_core1(core1_main);
 
 	printf("Start rendering\n");
-	game_init(&state);
-	uint32_t *tmds0 = 0, *tmds1 = 0;
-	while (1) {
-		for (uint y = 0; y < FRAME_HEIGHT; y += 2) {
-			queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmds0);
-			queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmds1);
-			multicore_fifo_push_blocking((uintptr_t)tmds1);
-			render_scanline(core0_scanbuf, y, &state);
-			encode_scanline(core0_scanbuf, tmds0);
-			queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmds0);
-			tmds1 = (uint32_t*)multicore_fifo_pop_blocking();
-			queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmds1);
-		}
-		update(&state);
-	}
+	core0_loop();
 
 	__builtin_unreachable();
 }

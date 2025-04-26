@@ -55,8 +55,9 @@ int main() {
 
 	int frame = 0;
 	const uint8_t *line = (const uint8_t*)MOVIE_BASE;
+	uint32_t *render_target = 0;
+
 	while (true) {
-		uint32_t *render_target;
 		for (int y = 0; y < FRAME_HEIGHT; ++y) {
 			uint8_t line_len = *line++;
 			queue_remove_blocking_u32(&dvi0.q_tmds_free, &render_target);

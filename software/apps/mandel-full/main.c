@@ -8,7 +8,6 @@
 #include "hardware/pll.h"
 #include "hardware/sync.h"
 #include "hardware/structs/bus_ctrl.h"
-#include "hardware/structs/ssi.h"
 #include "hardware/vreg.h"
 #include "pico/multicore.h"
 #include "pico/sem.h"
@@ -153,6 +152,7 @@ int __not_in_flash("main") main() {
 
   uint heartbeat = 0;
   uint32_t encode_time = 0;
+  uint32_t *our_tmds_buf = 0, *their_tmds_buf = 0;
 
   sem_release(&dvi_start_sem);
   while (1) {
@@ -166,7 +166,6 @@ int __not_in_flash("main") main() {
     if (fractal.done) zoom_mandel();
     //if (heartbeat & 1) init_palette();
     for (int y = 0; y < FRAME_HEIGHT / 2; y += 2) {
-      uint32_t *our_tmds_buf, *their_tmds_buf;
       queue_remove_blocking_u32(&dvi0.q_tmds_free, &their_tmds_buf);
       multicore_fifo_push_blocking((uint32_t)(&mandel[y*FRAME_WIDTH]));
       multicore_fifo_push_blocking((uint32_t)their_tmds_buf);
@@ -184,7 +183,6 @@ int __not_in_flash("main") main() {
       queue_add_blocking_u32(&dvi0.q_tmds_valid, &our_tmds_buf);
     }
     for (int y = FRAME_HEIGHT / 2 - 2; y >= 0; y -= 2) {
-      uint32_t *our_tmds_buf, *their_tmds_buf;
       queue_remove_blocking_u32(&dvi0.q_tmds_free, &their_tmds_buf);
       multicore_fifo_push_blocking((uint32_t)(&mandel[(y+1)*FRAME_WIDTH]));
       multicore_fifo_push_blocking((uint32_t)their_tmds_buf);

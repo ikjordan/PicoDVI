@@ -15,7 +15,7 @@
 #include "dvi_serialiser.h"
 #include "common_dvi_pin_configs.h"
 #include "tmds_encode_font_2bpp.h"
-
+#include "audio.h"
 // TODO should put this in scratch_x, it out to fit...
 #include "font_8x8.h"
 #define FONT_CHAR_WIDTH 8
@@ -26,7 +26,6 @@
 
 // Pick one:
 #define MODE_640x480_60Hz
-// #define MODE_720x480_60Hz
 // #define MODE_800x600_60Hz
 // #define MODE_960x540p_60Hz
 // #define MODE_1280x720_30Hz
@@ -34,16 +33,9 @@
 #if defined(MODE_640x480_60Hz)
 // DVDD 1.2V (1.1V seems ok too)
 #define FRAME_WIDTH 640
-#define FRAME_HEIGHT 480
+#define FRAME_HEIGHT 240
 #define VREG_VSEL VREG_VOLTAGE_1_20
 #define DVI_TIMING dvi_timing_640x480p_60hz
-
-#elif defined(MODE_720x480_60Hz)
-// DVDD 1.2V
-#define FRAME_WIDTH 720
-#define FRAME_HEIGHT 480
-#define VREG_VSEL VREG_VOLTAGE_1_20
-#define DVI_TIMING dvi_timing_720x480p_60hz
 
 #elif defined(MODE_800x600_60Hz)
 // DVDD 1.3V, going downhill with a tailwind
@@ -51,6 +43,7 @@
 #define FRAME_HEIGHT 600
 #define VREG_VSEL VREG_VOLTAGE_1_30
 #define DVI_TIMING dvi_timing_800x600p_60hz
+
 
 #elif defined(MODE_960x540p_60Hz)
 // DVDD 1.25V (slower silicon may need the full 1.3, or just not work)
@@ -86,6 +79,28 @@ static inline void set_char(uint x, uint y, char c) {
 	charbuf[x + y * CHAR_COLS] = c;
 }
 
+//Audio Related
+#define AUDIO_BUFFER_SIZE   256
+audio_sample_t      audio_buffer[AUDIO_BUFFER_SIZE];
+struct repeating_timer audio_timer;
+
+bool __not_in_flash_func(audio_timer_callback)(struct repeating_timer *t) {
+	while(true) {
+		int size = get_write_size(&dvi0.audio_ring, false);
+		if (size == 0) return true;
+		audio_sample_t *audio_ptr = get_write_pointer(&dvi0.audio_ring);
+		audio_sample_t sample;
+		static uint sample_count = 0;
+		for (int cnt = 0; cnt < size; cnt++) {
+			sample.channels[0] = commodore_argentina[sample_count % commodore_argentina_len] << 8;
+			sample.channels[1] = commodore_argentina[(sample_count+1024) % commodore_argentina_len] << 8;
+			*audio_ptr++ = sample;
+			sample_count = sample_count + 1;
+		}
+		increase_write_pointer(&dvi0.audio_ring, size);
+	}
+}
+
 // Pixel format RGB222
 static inline void set_colour(uint x, uint y, uint8_t fg, uint8_t bg) {
 	if (x >= CHAR_COLS || y >= CHAR_ROWS)
@@ -102,7 +117,7 @@ static inline void set_colour(uint x, uint y, uint8_t fg, uint8_t bg) {
 	}
 }
 
-void core1_main() {
+void __not_in_flash_func(core1_main)() {
 	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
 	dvi_start(&dvi0);
 	while (true) {
@@ -129,6 +144,8 @@ int __not_in_flash("main") main() {
 	// Run system at TMDS bit clock
 	set_sys_clock_khz(DVI_TIMING.bit_clk_khz, true);
 
+	// setup_default_uart();
+
 	dvi0.timing = &DVI_TIMING;
 	dvi0.ser_cfg = DVI_DEFAULT_SERIAL_CONFIG;
 	dvi_init(&dvi0, next_striped_spin_lock_num(), next_striped_spin_lock_num());
@@ -141,6 +158,16 @@ int __not_in_flash("main") main() {
 	}
 
 	hw_set_bits(&bus_ctrl_hw->priority, BUSCTRL_BUS_PRIORITY_PROC1_BITS);
+
+	// HDMI Audio related
+	dvi_get_blank_settings(&dvi0)->top    = 4 * 0;
+	dvi_get_blank_settings(&dvi0)->bottom = 4 * 0;
+	dvi_audio_sample_buffer_set(&dvi0, audio_buffer, AUDIO_BUFFER_SIZE);
+	dvi_set_audio_freq(&dvi0, 44100, 28000, 6272);
+	add_repeating_timer_ms(-2, audio_timer_callback, NULL, &audio_timer);
+
+	printf("starting...\n");
+
 	multicore_launch_core1(core1_main);
 
 	while (1)

@@ -99,11 +99,11 @@ uint8_t humidity_history[HISTORY_SIZE];
 struct dvi_inst dvi0;
 
 void core1_main() {
+	uint32_t *tmdsbuf = 0;
 	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
 	dvi_start(&dvi0);
 	while (true) {
 		for (uint y = 0; y < FRAME_HEIGHT; ++y) {
-			uint32_t *tmdsbuf;
 			queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmdsbuf);
 			for (uint component = 0; component < 3; ++component) {
 				tmds_encode_1bpp(

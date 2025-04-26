@@ -69,6 +69,15 @@ static const struct dvi_serialiser_cfg pico_sock_cfg = {
 	.invert_diffpairs = false
 };
 
+// pico-RGB2HDMI
+static const struct dvi_serialiser_cfg pico_rgb2hdmi_cfg = {
+	.pio = pio0,
+	.sm_tmds = {0, 1, 2},
+	.pins_tmds = {5, 7, 9},
+	.pins_clk = 3,
+	.invert_diffpairs = true
+};
+
 // The HDMI socket on Pimoroni Pico Demo HDMI
 // (we would talk about rev B if we had a rev B...)
 static const struct dvi_serialiser_cfg pimoroni_demo_hdmi_cfg = {
@@ -106,4 +115,11 @@ static const struct dvi_serialiser_cfg Olimex_RP2040_PICO_PC_cfg = {
 	.invert_diffpairs = true
 };
 
+static const struct dvi_serialiser_cfg waveshare_rp2040_pizero_hdmi_cfg = {
+	.pio = pio0,
+	.sm_tmds = {0, 1, 2},
+	.pins_tmds = {26, 24, 22},
+	.pins_clk = 28,
+	.invert_diffpairs = false
+};
 #endif
