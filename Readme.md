@@ -15,6 +15,22 @@ This repo adds to the following features to PicoDVI
 5. Stereo PWM sound for Olimexpc. The supplied PicoDVI code from Olimex uses PWM to generate the DVI clock on pins 12 and 13. The boards audio output is on pins 27 and 28. Pin 28 and pin 12 are on the same PWM channel (6A), so it is not possible to configure different PWM clock frequencies for the two pins. In effect this means that PWM stereo sound does not work with the supplied Olimex PicoDVI code. The code in this repo can optionally generate the DVI clock using a very simple PIO state machine, so that pins 27 and 28 can then be driven to generate PWM audio. To enable this set `DVI_USE_PIO_CLOCK`
 6. Tweak demo apps so they all build without warnings
 
+From the Updated RP2350 Readme
+==============================
+Build instructions:
+
+```bash
+cd software
+mkdir build
+# List of DVI configs is in software/include/common_dvi_pin_configs.h
+cmake -DPICO_SDK_PATH=/path/to/sdk -DPICO_PLATFORM=rp2350 -DPICO_COPY_TO_RAM=1 -DDVI_DEFAULT_SERIAL_CONFIG=Olimex_RP2040_PICO_PC_cfg ..
+make -j$(nproc)
+# Then flash a binary, e.g.:
+cp apps/tiles_and_sprites/tiles_and_sprites.uf2
+```
+
+If you plan to run the `vista` demo, then note that there are now two UF2 data files, `software/assets/vista_data_rp2040.uf2` and `software/assets/vista_data_rp2350.uf2`. The only difference is the family IDs: the first can be dragged on RP2040 and on RP2350 A0, and the second can be dragged on RP2350 A1 and later.
+
 From the original Readme
 ========================
 Big Kudos to @shuichitakano to fix the audio support
