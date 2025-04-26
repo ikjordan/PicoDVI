@@ -4,10 +4,11 @@ Bitbanged DVI on the RP2040 Microcontroller with HDMI and audio support
 This repo adds to the following features to PicoDVI
 
 
-1. Audio over DVI (HDMI) taken from the work of [mlorenzati and shuichitakano](https://github.com/mlorenzati/PicoDVIfrom), with some optimizations, additions and fixes. Works with all boards. There are 3 DVI audio examples:
+1. Audio over DVI (HDMI) taken from the work of [mlorenzati and shuichitakano](https://github.com/mlorenzati/PicoDVIfrom), with some optimizations, additions and fixes. Works with all boards. There are 4 DVI audio examples:
     + `moon_double_audio`: A bit doubled version of the `moon` demo that includes audio (spoken voice)
-    + `sprite_bounce_audio`: Adds an audio sine wave to the `sprite_bounce_demo` - caution this is quite loud!
+    + `sprite_bounce_audio`: Adds an audio sine wave to the `sprite_bounce_demo`
     + `colour_terminal_audio`: Adds spoken voice audio to the `colour_terminal` demo
+    + `tiles_and_sprites_audio`: Adds spoken voice to the `tiles_and_sprites` demo (submitted by fruit-bat)
 2. Includes additions made by fruit-bat to gracefully play silence when an HDMI audio buffer underrun occurs
 3. 50 Hz DVI modes have been added. Small changes were needed to the base code as a pixel width of 720 is not divisible by 32.
 4. A board configuration for Olimex. Set `DVI_DEFAULT_SERIAL_CONFIG` equal to `Olimex_RP2040_PICO_PC_cfg`
