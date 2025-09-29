@@ -4,7 +4,7 @@ Bitbanged DVI on the RP2040 Microcontroller with HDMI and audio support
 This repo adds to the following features to PicoDVI
 
 
-1. Audio over DVI (HDMI) taken from the work of [mlorenzati and shuichitakano](https://github.com/mlorenzati/PicoDVIfrom), with some optimizations, additions and fixes. Works with all boards. There are 4 DVI audio examples:
+1. Audio over DVI (HDMI) taken from the work of [mlorenzati and shuichitakano](https://github.com/mlorenzati/PicoDVI), with some optimizations, additions and fixes. Works with all boards. There are 4 DVI audio examples:
     + `moon_double_audio`: A bit doubled version of the `moon` demo that includes audio (spoken voice)
     + `sprite_bounce_audio`: Adds an audio sine wave to the `sprite_bounce_demo`
     + `colour_terminal_audio`: Adds spoken voice audio to the `colour_terminal` demo
