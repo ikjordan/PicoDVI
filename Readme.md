@@ -4,7 +4,7 @@ Bitbanged DVI on the RP2040 Microcontroller with HDMI and audio support
 This repo adds to the following features to PicoDVI
 
 
-1. Audio over DVI (HDMI) taken from the work of [mlorenzati and shuichitakano](https://github.com/mlorenzati/PicoDVIfrom), with some optimizations, additions and fixes. Works with all boards. There are 4 DVI audio examples:
+1. Audio over DVI (HDMI) taken from the work of [mlorenzati and shuichitakano](https://github.com/mlorenzati/PicoDVI), with some optimizations, additions and fixes. Works with all boards. There are 4 DVI audio examples:
     + `moon_double_audio`: A bit doubled version of the `moon` demo that includes audio (spoken voice)
     + `sprite_bounce_audio`: Adds an audio sine wave to the `sprite_bounce_demo`
     + `colour_terminal_audio`: Adds spoken voice audio to the `colour_terminal` demo
@@ -14,6 +14,7 @@ This repo adds to the following features to PicoDVI
 4. A board configuration for Olimex. Set `DVI_DEFAULT_SERIAL_CONFIG` equal to `Olimex_RP2040_PICO_PC_cfg`
 5. Stereo PWM sound for Olimexpc. The supplied PicoDVI code from Olimex uses PWM to generate the DVI clock on pins 12 and 13. The boards audio output is on pins 27 and 28. Pin 28 and pin 12 are on the same PWM channel (6A), so it is not possible to configure different PWM clock frequencies for the two pins. In effect this means that PWM stereo sound does not work with the supplied Olimex PicoDVI code. The code in this repo can optionally generate the DVI clock using a very simple PIO state machine, so that pins 27 and 28 can then be driven to generate PWM audio. To enable this set `DVI_USE_PIO_CLOCK`
 6. Tweak demo apps so they all build without warnings
+Note: Some demos may not currently compile with Pico SDK 2.2.0, due to the need 
 
 From the Updated RP2350 Readme
 ==============================
